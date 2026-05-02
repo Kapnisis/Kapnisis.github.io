@@ -1,7 +1,108 @@
 <!DOCTYPE html>
 <html>
-<body>
-<h1>Hello World</h1>
-<p>I'm hosted with GitHub Pages.</p>
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Routing on a mesh</title>
+
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.0.0/dist/css/bootstrap.min.css"
+        integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+    <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js"
+        integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN"
+        crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.12.9/dist/umd/popper.min.js"
+        integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q"
+        crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.0.0/dist/js/bootstrap.min.js"
+        integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl"
+        crossorigin="anonymous"></script>
+
+    <link href="grid.css" rel="stylesheet" />
+</head>
+
+<body class="lang-gr">
+
+    <script>
+        function setLang(lang) {
+            document.body.classList.remove('lang-en', 'lang-gr');
+            document.body.classList.add('lang-' + lang);
+        }
+    </script>
+
+    <nav class="navbar navbar-expand-lg navbar-dark" style="background: linear-gradient(135deg, #1a2a4a, #2a4a7a);">
+        <div class="container">
+
+            <a class="navbar-brand" style="font-weight: bold; font-size: 18px; color: white;">Routing Algorithms</a>
+
+            <div style="display: flex; align-items: center; gap: 8px; margin-left: auto;">
+                <span onclick="setLang('en')" style="cursor:pointer; font-size:20px;">🇬🇧</span>
+                <span onclick="setLang('gr')" style="cursor:pointer; font-size:20px;">🇬🇷</span>
+
+                <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navmenu">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+            </div>
+
+            <div class="collapse navbar-collapse" id="navmenu">
+                <ul class="navbar-nav ml-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="not-ready.html">
+                            <span lang="en">Theory</span>
+                            <span lang="gr">Θεωρία</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="not-done.html">
+                            <span lang="en">Tools</span>
+                            <span lang="gr">Εργαλεία</span>
+                        </a>
+                    </li>
+                </ul>
+            </div>
+
+        </div>
+    </nav>
+
+    <div class="container" align="center" style="padding-top: 20px;">
+
+        <span lang="en">Routing algorithm of N processors on a √N x √N mesh.</span>
+        <span lang="gr">Αλγόριθμοι διευθυνσιοδότησης μεταξύ Ν επεξεργαστών σε πλέγμα √N x √N</span>
+
+        <br><br>
+        <span lang="en">Setup: <br><br> Select the size of your mesh. Enter the value √N.<br>Then GENERATE your mesh.
+            Feel free to edit any cell.</span>
+        <span lang="gr">Δημιουργία: <br><br> Επίλεξε το μέγεθος του πλέγματος. Βάλε την τιμή √N.<br>Στη συνέχεια
+            πάτησε GENERATE για να δημιουργήσεις το αρχικό σου πλέγμα. Μπορείς να αλλάξεις όποιο κελί
+            επιθυμείς.</span>
+
+        <br><br>
+        <input type="number" id="sideN" min="1">
+        <br><br>
+        <button onclick="generateTable()">Generate Table</button>
+        <br><br>
+
+        <span lang="en">Then select START to solve your input mesh using a "Routing based on a snakelike Sorting
+            Algorithm in 3√N+o(√N) steps" [to do: add link to literature]</span>
+        <span lang="gr">Έπειτα επίλεξε START για να λύσεις το πρόβλημα διευθυνσιοδότητας στο πλέγμα σου
+            χρησιμοποιώντας τον Αλγόριθμο βασισμένο στην snakelike Ταξινόμηση σε 3√N+o(√N) βήματα [to do: link
+            θεωρία]</span>
+        <br><br>
+        <button onclick="startAlgorithm()">Start Algorithm</button>
+
+        <div id="tableContainer"></div>
+        <div id="phaseContainer"></div>
+
+    </div>
+
+
+
+    <script src="variables.js"></script>
+    <script src="grid.js"></script>
+    <script src="helpers.js"></script>
+    <script src="snakesort.js"></script>
+    <script src="step2-3.js"></script>
+
 </body>
+
 </html>
