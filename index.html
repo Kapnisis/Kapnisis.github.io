@@ -19,6 +19,7 @@
         crossorigin="anonymous"></script>
 
     <link href="grid.css" rel="stylesheet" />
+    <link href="layout.css" rel="stylesheet" />
 </head>
 
 <body class="lang-gr">
@@ -31,78 +32,202 @@
     </script>
 
     <nav class="navbar navbar-expand-lg navbar-dark" style="background: linear-gradient(135deg, #1a2a4a, #2a4a7a);">
-        <div class="container">
-
-            <a class="navbar-brand" style="font-weight: bold; font-size: 18px; color: white;">Routing Algorithms</a>
-
+        <div class="container-fluid px-4">
+            <a class="navbar-brand" style="font-weight: bold; font-size: 18px; color: white;">Offline Routing in a Mesh</a>
             <div style="display: flex; align-items: center; gap: 8px; margin-left: auto;">
-                <span onclick="setLang('en')" style="cursor:pointer; font-size:20px;">🇬🇧</span>
-                <span onclick="setLang('gr')" style="cursor:pointer; font-size:20px;">🇬🇷</span>
-
                 <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navmenu">
                     <span class="navbar-toggler-icon"></span>
                 </button>
             </div>
-
             <div class="collapse navbar-collapse" id="navmenu">
                 <ul class="navbar-nav ml-auto">
                     <li class="nav-item">
-                        <a class="nav-link" href="not-ready.html">
+                        <a class="nav-link" href="index.html">
                             <span lang="en">Theory</span>
                             <span lang="gr">Θεωρία</span>
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="not-done.html">
+                        <a class="nav-link" href="index.html">
                             <span lang="en">Tools</span>
                             <span lang="gr">Εργαλεία</span>
                         </a>
                     </li>
                 </ul>
             </div>
-
         </div>
     </nav>
 
-    <div class="container" align="center" style="padding-top: 20px;">
+    <div class="flag-bar">
+        <span onclick="setLang('en')" style="cursor:pointer; font-size:20px;">🇬🇧</span>
+        <span onclick="setLang('gr')" style="cursor:pointer; font-size:20px;">🇬🇷</span>
+    </div>
 
-        <span lang="en">Routing algorithm of N processors on a √N x √N mesh.</span>
-        <span lang="gr">Αλγόριθμοι δρομολόγησης μεταξύ Ν επεξεργαστών σε πλέγμα √N x √N</span>
+    <input type="hidden" id="sideN" value="4">
 
-        <br><br>
-        <span lang="en">Setup: <br><br> Select the size of your mesh. Enter the value √N.<br>Then GENERATE your mesh.
-            Feel free to edit any cell.</span>
-        <span lang="gr">Δημιουργία: <br><br> Επίλεξε το μέγεθος του πλέγματος. Βάλε την τιμή √N.<br>Στη συνέχεια
-            πάτησε GENERATE για να δημιουργήσεις το αρχικό σου πλέγμα. Μπορείς να αλλάξεις όποιο κελί
-            επιθυμείς.</span>
+    <div class="main-layout">
 
-        <br><br>
-        <input type="number" id="sideN" min="1">
-        <br><br>
-        <button onclick="generateTable()">Generate Table</button>
-        <br><br>
+        <div class="folders-col">
 
-        <span lang="en">Then select START to solve your input mesh using a "Routing based on a snakelike Sorting
-            Algorithm in 3√N+o(√N) steps" [to do: add link to literature]</span>
-        <span lang="gr">Έπειτα επίλεξε START για να λύσεις το πρόβλημα δρομολόγησης στο πλέγμα σου
-            χρησιμοποιώντας τον Αλγόριθμο βασισμένο στην snakelike Ταξινόμηση σε 3√N+o(√N) βήματα [to do: link
-            θεωρία]</span>
-        <br><br>
-        <button onclick="startAlgorithm()">Start Algorithm</button>
+            <!-- Tab 1 -->
+            <div class="tab-card">
+                <div class="tab-header">
+                    <span class="tab-num">1</span>
+                    <span class="tab-title">
+                        <span lang="en">The Problem</span>
+                        <span lang="gr">Το Πρόβλημα</span>
+                    </span>
+                    <span class="tab-short">
+                        <span lang="en">Offline routing on a mesh</span>
+                        <span lang="gr">Δρομολόγηση εκτός σύνδεσης σε πλέγμα</span>
+                    </span>
+                </div>
+                <div class="tab-body">
+                    <span lang="en">
+                        Consider a network of N processors arranged in a square mesh of side √N.</br>
+                        Each processor holds a packet addressed to another processor, and we seek
+                        the optimal way to route all these packets to their destinations.</br>
+                        In this application we examine two offline algorithms that solve this problem,
+                        analysing their movements step by step.
+                    </span>
+                    <span lang="gr">
+                        Έστω ένα δίκτυο Ν επεξεργαστών τοποθετημένοι σε τετραγωνικό πλέγμα με πλευρά √N.</br>
+                        Σε κάθε επεξεργαστή υπάρχει ένα πακέτο-μήνυμα απευθυνόμενο προς κάποιον άλλο
+                        επεξεργαστή και ψάχνουμε το βέλτιστο τρόπο για τη δρομολόγηση των πακέτων αυτών.</br>
+                        Στην εφαρμογή αυτή εξετάζουμε δύο offline αλγορίθμους που λύνουν το πρόβλημα μας
+                        αυτό, αναλύοντας τις κινήσεις τους βήμα βήμα.
+                    </span>
+                </div>
+            </div>
 
-        <div id="tableContainer"></div>
-        <div id="phaseContainer"></div>
+            <!-- Tab 2: -->
+            <div class="tab-card">
+                <div class="tab-header">
+                    <span class="tab-num">2</span>
+                    <span class="tab-title">
+                        <span lang="en">The Algorithms</span>
+                        <span lang="gr">Οι Αλγόριθμοι</span>
+                    </span>
+                    <span class="tab-short">
+                        <span lang="en">Two available algorithms</span>
+                        <span lang="gr">Δύο διαθέσιμοι αλγόριθμοι</span>
+                    </span>
+                </div>
+                <div class="tab-body">
+                    <span lang="en">
+                        The available algorithms are:<br><br>
+                        <strong>A.</strong> Algorithm based on the work of Krizanc and Narayanan,
+                        which promises a solution after <strong>2.5*√N steps</strong> with queues
+                        of size at most 2 at each processor.<br><br>
+                        <strong>B.</strong> Algorithm based on a routing graph,
+                        which promises a solution after <strong>3√N−3 steps</strong>.
+                        <br><em>[to do]</em>
+                    </span>
+                    <span lang="gr">
+                        Οι διαθέσιμοι προς χρήση αλγόριθμοι είναι:<br><br>
+                        <strong>Α.</strong> Αλγόριθμος βασισμένος στη δουλειά των Krizanc και Narayanan,
+                        που υπόσχεται λύση μετά από <strong>2.5*√N βήματα</strong> με ουρές μεγέθους 2
+                        σε κάθε επεξεργαστή.<br><br>
+                        <strong>Β.</strong> Αλγόριθμος βασισμένος σε γράφο δρομολόγησης που υπόσχεται
+                        λύση μετά από <strong>3√N−3 βήματα</strong>.
+                        <br><em >[to do]</em>
+                    </span>
+                </div>
+            </div>
+
+            <!-- Tab 3 -->
+            <div class="tab-card">
+                <div class="tab-header">
+                    <span class="tab-num">3</span>
+                    <span class="tab-title">
+                        <span lang="en">The Parameters</span>
+                        <span lang="gr">Οι Παράμετροι</span>
+                    </span>
+                    <span class="tab-short">
+                        <span lang="en">Grid size: </span>
+                        <span lang="gr">Πλέγμα: </span>
+                    <span id="shortParam">4 × 4 </span>
+                    </span>                    
+                </div>
+                <div class="tab-body">
+                    <span lang="en">We have a network of <strong id="total">16</strong> processors arranged in a</span>
+                    <span lang="gr">Έχουμε δίκτυο <strong id="total2">16</strong> επεξεργαστών τοποθετημένοι σε ένα</span>
+                    <div class="input-row">
+                        <input class="mesh-input" type="number" id="n1" value="4" min="2" step="2" oninput="syncN(this)">
+                        ×
+                        <input class="mesh-input" type="number" id="n2" value="4" min="2" step="2" oninput="syncN(this)">
+                        <span lang="en">mesh.</span>
+                        <span lang="gr">πλέγμα.</span>
+                    </div>
+                    <br>
+                    <span lang="en">
+                        Each processor has an address <strong>[x,y]</strong> and contains a packet indicating
+                        the destination processor.<br>
+                        You may edit the packets freely before running any algorithm, as long as all packets have a valid destination.
+                    </span>
+                    <span lang="gr">
+                        Κάθε επεξεργαστής έχει μια διεύθυνση <strong>[x,y]</strong> και περιέχει ένα πακέτο το οποίο
+                        δείχνει τη θέση του επεξεργαστή στον οποίο πρέπει να πάει το μήνυμα μετά
+                        την εκτέλεση του αλγορίθμου. <br>
+                        Μπορείς να επεξεργαστείς τα πακέτα πριν εκτέλεσεις κάποιον αλγόριθμο, αρκεί όλα τα πακέτα να έχουν έγκυρο αποδέκτη.
+                    </span>
+                    <br><br>
+                    <button class="run-btn" onclick="krizancAlgorithm()" style="width:100%; margin-bottom:8px;">
+                        <span lang="en">▶ Run Krizanc-Narayanan</span>
+                        <span lang="gr">▶ Εκτέλεση Krizanc-Narayanan</span>
+                    </button>
+                    <button class="run-btn" disabled
+                        style="width:100%; background:#999; border-color:#999; cursor:not-allowed;">
+                        <span lang="en">▶ Algorithm B — Not yet available</span>
+                        <span lang="gr">▶ Αλγόριθμος Β — Μη διαθέσιμος ακόμη</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Tab 4 -->
+            <div class="tab-card">
+                <div class="tab-header">
+                    <span class="tab-num">4</span>
+                    <span class="tab-title">
+                        <span lang="en">The Analysis</span>
+                        <span lang="gr">Η Ανάλυση</span>
+                    </span>
+                    <span class="tab-short">
+                        <span lang="en">Run an algorithm for results</span>
+                        <span lang="gr">Εκτέλεσε για αποτελέσματα</span>
+                    </span>
+                </div>
+                <div class="tab-body" id="analysisBox">
+                    <span lang="en" style="color:#888; font-style:italic;">
+                        [To do - γενικές έννοιες που χρησιμοποιούνται και εξήγηση τι γίνεται σε κάθε φάση]
+                    </span>
+                    <span lang="gr" style="color:#888; font-style:italic;">
+                        [To do - γενικές έννοιες που χρησιμοποιούνται και εξήγηση τι γίνεται σε κάθε φάση]
+                    </span>
+                </div>
+            </div>
+
+        </div>
+
+        
+        <div class="grid-col">
+            <div class="grid-col-inner">
+                <div class="grid-col-title">
+                    <span lang="en">Mesh grid</span>
+                    <span lang="gr">Πλέγμα επεξεργαστών</span>
+                </div>
+                <div id="tableContainer"></div>
+                <div id="phaseContainer"></div>
+            </div>
+        </div>
 
     </div>
 
-
-
-    <script src="variables.js"></script>
     <script src="grid.js"></script>
     <script src="helpers.js"></script>
-    <script src="snakesort.js"></script>
-    <script src="step2-3.js"></script>
+    
+    <script src="layout.js"></script>
+    <script src="krizanc.js"></script>
 
 </body>
-
 </html>

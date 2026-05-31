@@ -74,8 +74,8 @@ function generateTable() {
     tableContainer.appendChild(table);
 
     const inputs = Array.from(document.querySelectorAll('#tableContainer input'));
-    const toErase = Math.floor(inputs.length * Math.random());
-    inputs.sort(() => Math.random() - 0.5).slice(0, toErase).forEach(input => input.value = '');
+    //const toErase = Math.floor(inputs.length * Math.random());
+    //inputs.sort(() => Math.random() - 0.5).slice(0, toErase).forEach(input => input.value = '');
 }
 
 
