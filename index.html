@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Παράλληλη Δρομολόγηση Πακέτων σε Διδιάστατο Πλέγμα</title>
+
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.0.0/dist/css/bootstrap.min.css"
+        integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+    <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js"
+        integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN"
+        crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.12.9/dist/umd/popper.min.js"
+        integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q"
+        crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.0.0/dist/js/bootstrap.min.js"
+        integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl"
+        crossorigin="anonymous"></script>
+
+    <link href="grid_ver2.css" rel="stylesheet" />
+    <link href="offline-alg_ver2.css" rel="stylesheet" />
+</head>
+
+<body class="lang-gr">
+
+    <script>
+        function setLang(lang) {
+            document.body.classList.remove('lang-en', 'lang-gr');
+            document.body.classList.add('lang-' + lang);
+        }
+    </script>
+
+    <nav class="navbar navbar-expand-lg navbar-dark" style="background: linear-gradient(135deg, #1a2a4a, #2a4a7a);">
+        <div class="container-fluid px-4">
+            <a class="navbar-brand" style="font-weight: bold; font-size: 18px; color: white;">
+                <span lang="en">Offline Routing in a Mesh</span>
+                <span lang="gr">Offline Δρομολόγηση Πακέτων σε Διδιάστατο Πλέγμα</span>
+            </a>
+            <div class="flag-bar">
+        <span onclick="setLang('en')" style="cursor:pointer; font-size:20px;">🇬🇧</span>
+        <span onclick="setLang('gr')" style="cursor:pointer; font-size:20px;">🇬🇷</span>
+    </div>
+            <div style="display: flex; align-items: center; gap: 8px; margin-left: auto;">
+                <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navmenu">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+            </div>
+            <div class="collapse navbar-collapse" id="navmenu">
+                <ul class="navbar-nav ml-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="theory.html">
+                            <span lang="en">Theory</span>
+                            <span lang="gr">Θεωρία</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="tools.html">
+                            <span lang="en">Tools</span>
+                            <span lang="gr">Εργαλεία</span>
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+
+
+    <input type="hidden" id="sideN" value="4">
+    <input type="hidden" id="selectedAlgo" value="">
+
+    <div style="max-width: 1700px; margin: 0 auto; padding: 24px 40px 60px 40px;">
+
+        <!-- Wizard tabs -->
+        <div class="wizard-tabs">
+            <div class="wizard-tab active" data-wizard-step="1">
+                <span class="step-num">1</span>
+                <span lang="en">Choose Algorithm</span>
+                <span lang="gr">Επιλογή Αλγορίθμου</span>
+            </div>
+            <div class="wizard-tab disabled" data-wizard-step="2">
+                <span class="step-num">2</span>
+                <span lang="en">Create Grid</span>
+                <span lang="gr">Δημιουργία Πλέγματος</span>
+            </div>
+            <div class="wizard-tab disabled" data-wizard-step="3">
+                <span class="step-num">3</span>
+                <span lang="en">Run &amp; Analyze</span>
+                <span lang="gr">Εκτέλεση &amp; Ανάλυση</span>
+            </div>
+        </div>
+
+        <!-- Step 1: Intro + algorithm selection -->
+        <div class="wizard-step-body active" id="wizardStep1">
+
+            <div class="intro-panel">
+                <span lang="en">In our application we present two algorithms that use off-line techniques to route information packets on N processors arranged in a two-dimensional square mesh &radic;N x &radic;N. Choose the algorithm you want to analyze:</span>
+                <span lang="gr">Στην εφαρμογή μας παρουσιάζουμε δύο αλγορίθμους που χρησιμοποιούν off-line τεχνικές για τη δρομολόγηση πακέτων πληροφορίας σε Ν επεξεργαστές διαταγμένους σε διδιάστατο τετραγωνικό πλέγμα &radic;N x &radic;N. Επίλεξε τον αλγόριθμο που θες να αναλύσεις:</span>
+            </div>
+
+            <div class="algo-cards">
+                <div class="algo-card" data-algo="basic">
+                    <div class="algo-card-header">
+                        <h3><span lang="en">A Basic Offline Algorithm</span><span lang="gr">Ένας Βασικός Offline Αλγόριθμος</span></h3>
+                        <div class="algo-subtitle"><span lang="en">based on the work of T.F. Leighton</span><span lang="gr">βασισμένος στο έργο του T.F. Leighton</span></div>
+                    </div>
+                    <div class="algo-card-body">
+                        <div class="algo-stat-row"><span class="algo-stat-label" lang="en">Max number of steps</span><span class="algo-stat-label" lang="gr">Μέγιστος αριθμός βημάτων</span><span class="algo-stat-value">3 &middot; &radic;N &minus; 3</span></div>
+                        <div class="algo-stat-row"><span class="algo-stat-label" lang="en">Queue size per edge</span><span class="algo-stat-label" lang="gr">Μέγεθος ουράς σε κάθε ακμή</span><span class="algo-stat-value">1</span></div>
+                        <p style="margin-top:14px; margin-bottom:0; line-height:1.5;">
+                            <span lang="en">Executes 3 greedy permutations.<br>Protects the queue size with an off-line routing trick before executing them.</span>
+                            <span lang="gr">Εκτελεί 3 άπληστες μεταθέσεις.<br>Προστατεύει το μέγεθος ουρών με ένα τρικ off-line δρομολόγησης πριν την εκτέλεσή τους.</span>
+                        </p>
+                    </div>
+                    <div class="algo-card-footer">
+                        <span lang="en">Select this algorithm</span>
+                        <span lang="gr">Επίλεξε αυτόν τον αλγόριθμο</span>
+                    </div>
+                </div>
+
+                <div class="algo-card" data-algo="krizanc">
+                    <div class="algo-card-header">
+                        <h3><span lang="en">The Krizanc-Narayanan Algorithm</span><span lang="gr">Αλγόριθμος των Krizanc-Narayanan</span></h3>
+                        <div class="algo-subtitle"><span lang="en">based on the work of Krizanc-Narayanan</span><span lang="gr">βασισμένος στο έργο των Krizanc-Narayanan</span></div>
+                    </div>
+                    <div class="algo-card-body">
+                        <div class="algo-stat-row"><span class="algo-stat-label" lang="en">Max number of steps</span><span class="algo-stat-label" lang="gr">Μέγιστος αριθμός βημάτων</span><span class="algo-stat-value">2.5 &middot; &radic;N</span></div>
+                        <div class="algo-stat-row"><span class="algo-stat-label" lang="en">Queue size per processor</span><span class="algo-stat-label" lang="gr">Μέγεθος ουράς επεξεργαστή</span><span class="algo-stat-value">2</span></div>
+                        
+                        <p style="margin-top:14px; margin-bottom:0; line-height:1.5;">
+                            <span lang="en">Splits the mesh into quadrants and performs off-line routing on them to achieve the queue bound.</span>
+                            <span lang="gr">Χωρίζει το πλέγμα σε τεταρτημόρια και κάνει off-line δρομολόγηση σε αυτά για να επιτύχει το όριο ουράς.</span>
+                        </p>
+                    </div>
+                    <div class="algo-card-footer">
+                        <span lang="en">Select this algorithm</span>
+                        <span lang="gr">Επίλεξε αυτόν τον αλγόριθμο</span>
+                    </div>
+                </div>
+            </div>
+
+            <div style="text-align:center; margin-top:24px;">
+                <button class="btn-primary" id="toStep2Btn" disabled style="padding:10px 30px; font-size:14px;">
+                    <span lang="en">Continue &rarr;</span><span lang="gr">Συνέχεια &rarr;</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Step 2: Grid creation -->
+        <div class="wizard-step-body" id="wizardStep2">
+            <div class="setup-panel">
+                <div class="input-row">
+                    <span lang="en">Grid</span><span lang="gr">Πλέγμα</span>
+                    <input class="mesh-input" type="number" id="n1" value="4" min="2" step="1" oninput="syncN(this)">
+                    &times;
+                    <input class="mesh-input" type="number" id="n2" value="4" min="2" step="1" oninput="syncN(this)">
+                    <span lang="en">for a total of N = <strong id="totalN">16</strong> processors.</span>
+                    <span lang="gr">για σύνολο N = <strong id="totalN2">16</strong> επεξεργαστών.</span>
+                </div>
+
+                <button class="btn-primary" id="generateBtn" style="margin-top:16px;">
+                    <span lang="en">Generate random grid</span>
+                    <span lang="gr">Δημιούργησε τυχαίο πλέγμα</span>
+                </button>
+
+                <div id="tableContainer" style="margin-top: 10px;"></div>
+            </div>
+
+            <div style="text-align:center; margin-top:24px;">
+                <button class="btn-secondary" id="backToStep1Btn" style="margin-right:10px;">
+                    <span lang="en">&larr; Back</span><span lang="gr">&larr; Πίσω</span>
+                </button>
+                <button class="btn-primary" id="toStep3Btn" style="padding:10px 30px; font-size:14px;">
+                    <span lang="en">Continue &rarr;</span><span lang="gr">Συνέχεια &rarr;</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Step 3: Execution & analysis -->
+        <div class="wizard-step-body" id="wizardStep3">
+            <div class="grid-col-inner" style="background:white; border:1px solid #bcc5d0; border-radius:6px; padding:20px;">
+                <div id="phaseContainer"></div>
+            </div>
+            <div style="text-align:center; margin-top:20px;">
+                <button class="btn-secondary" id="backToStep2Btn">
+                    <span lang="en">&larr; Back to grid setup</span><span lang="gr">&larr; Πίσω στη δημιουργία πλέγματος</span>
+                </button>
+            </div>
+        </div>
+
+    </div>
+
+    <script src="grid_ver2.js"></script>
+    <script src="offline-alg_ver2.js"></script>
+<script src="k-n.js"></script>
+
+    <script>
+        function goToWizardStep(step) {
+            document.querySelectorAll('.wizard-tab').forEach(t => {
+                const s = parseInt(t.dataset.wizardStep);
+                t.classList.toggle('active', s === step);
+            });
+            document.querySelectorAll('.wizard-step-body').forEach((el, i) => {
+                el.classList.toggle('active', i === step - 1);
+            });
+        }
+
+        function syncN(el) {
+            const v = parseInt(el.value);
+            if (isNaN(v) || v < 2) return;
+            document.getElementById('n1').value = v;
+            document.getElementById('n2').value = v;
+            document.getElementById('totalN').textContent = v * v;
+            document.getElementById('totalN2').textContent = v * v;
+            document.getElementById('sideN').value = v;
+        }
+
+        document.querySelectorAll('.wizard-tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                if (tab.classList.contains('disabled')) return;
+                goToWizardStep(parseInt(tab.dataset.wizardStep));
+            });
+        });
+
+        document.querySelectorAll('.algo-card').forEach(card => {
+            card.addEventListener('click', () => {
+                if (card.dataset.disabled === 'true') return;
+                document.querySelectorAll('.algo-card').forEach(c => c.classList.remove('selected'));
+                card.classList.add('selected');
+                document.getElementById('selectedAlgo').value = card.dataset.algo;
+                document.getElementById('toStep2Btn').disabled = false;
+            });
+        });
+
+        document.getElementById('toStep2Btn').addEventListener('click', () => {
+            document.querySelectorAll('.wizard-tab[data-wizard-step="2"]').forEach(t => t.classList.remove('disabled'));
+            goToWizardStep(2);
+            // NOTE: grid is intentionally NOT auto-generated here -- only via the button.
+        });
+
+        document.getElementById('backToStep1Btn').addEventListener('click', () => goToWizardStep(1));
+
+        document.getElementById('generateBtn').addEventListener('click', () => {
+            document.getElementById('sideN').value = document.getElementById('n1').value;
+            generateTable();
+        });
+
+        document.getElementById('toStep3Btn').addEventListener('click', () => {
+            if (document.getElementById('tableContainer').children.length === 0) {
+                alert(document.body.classList.contains('lang-gr')
+                    ? 'Πάτησε πρώτα "Δημιούργησε τυχαίο πλέγμα".'
+                    : 'Please press "Generate random grid" first.');
+                return;
+            }
+            if (!validateGrid()) return;
+            document.querySelectorAll('.wizard-tab[data-wizard-step="3"]').forEach(t => t.classList.remove('disabled'));
+            goToWizardStep(3);
+            const algo = document.getElementById('selectedAlgo').value;
+            if (algo === 'basic') {
+    offlineAlgorithm();
+} else if (algo === 'krizanc') {
+    krizancNarayananAlgorithm();
+}
+        });
+
+        document.getElementById('backToStep2Btn').addEventListener('click', () => goToWizardStep(2));
+    </script>
+
+</body>
+</html>

@@ -1,0 +1,554 @@
+/* ═══════════════════════════ Wizard tabs ═══════════════════════════ */
+.wizard-tabs {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 24px;
+    flex-wrap: wrap;
+}
+
+.wizard-tab {
+    flex: 1;
+    min-width: 160px;
+    padding: 12px 16px;
+    border-radius: 8px;
+    background: white;
+    border: 2px solid #dde4ee;
+    color: #8a94a6;
+    font-weight: 600;
+    font-size: 14px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+}
+
+.wizard-tab .step-num {
+    display: inline-block;
+    width: 22px;
+    height: 22px;
+    line-height: 22px;
+    border-radius: 50%;
+    background: #dde4ee;
+    color: white;
+    font-size: 12px;
+    margin-right: 6px;
+}
+
+.wizard-tab.active {
+    border-color: #1e3a6a;
+    color: #1a2a4a;
+    background: #eef3fa;
+}
+
+.wizard-tab.active .step-num {
+    background: #1e3a6a;
+}
+
+.wizard-tab.done .step-num {
+    background: #2f9e58;
+}
+
+.wizard-tab.disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.wizard-step-body {
+    display: none;
+}
+
+.wizard-step-body.active {
+    display: block;
+}
+
+/* ═══════════════════════════ Intro panel ═══════════════════════════ */
+.intro-panel {
+    max-width: 760px;
+    margin: 0 auto 32px auto;
+    background: white;
+    border: 1px solid #dde4ee;
+    border-radius: 10px;
+    padding: 20px 26px;
+    text-align: center;
+    color: #333;
+    font-size: 14.5px;
+    line-height: 1.7;
+}
+
+/* ═══════════════════════════ Algorithm selection cards ═══════════════════════════ */
+.algo-cards {
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+.algo-card {
+    flex: 1;
+    min-width: 300px;
+    max-width: 420px;
+    background: white;
+    border: 2px solid #dde4ee;
+    border-radius: 10px;
+    overflow: hidden;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    flex-direction: column;
+}
+
+.algo-card:hover {
+    border-color: #6a8ac0;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 18px rgba(30, 58, 106, 0.12);
+}
+
+.algo-card.selected {
+    border-color: #1e3a6a;
+    box-shadow: 0 0 0 3px rgba(30, 58, 106, 0.15);
+}
+
+.algo-card.disabled-card {
+    cursor: not-allowed;
+    opacity: 0.6;
+}
+
+.algo-card.disabled-card:hover {
+    transform: none;
+    box-shadow: none;
+    border-color: #dde4ee;
+}
+
+.algo-card-header {
+    background: linear-gradient(135deg, #1a2a4a, #2a4a7a);
+    color: white;
+    padding: 16px 18px;
+}
+
+.algo-card-header h3 {
+    margin: 0 0 4px 0;
+    font-size: 17px;
+}
+
+.algo-card-header .algo-subtitle {
+    font-size: 12px;
+    color: #b5c8e8;
+    font-style: italic;
+}
+
+.algo-card-body {
+    padding: 16px 18px;
+    font-size: 13px;
+    color: #333;
+    line-height: 1.6;
+    flex: 1;
+}
+
+.algo-stat-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 6px 0;
+    border-bottom: 1px dashed #e0e0e0;
+    font-size: 12.5px;
+}
+
+.algo-stat-row:last-child {
+    border-bottom: none;
+}
+
+.algo-stat-label {
+    color: #666;
+}
+
+.algo-stat-value {
+    font-weight: 700;
+    color: #1a2a4a;
+    font-family: monospace;
+}
+
+.algo-phase-list {
+    margin: 10px 0 0 0;
+    padding-left: 18px;
+    font-size: 12.5px;
+    color: #444;
+}
+
+.algo-phase-list li {
+    margin-bottom: 4px;
+}
+
+.algo-card-footer {
+    padding: 12px 18px;
+    background: #f5f8fc;
+    border-top: 1px solid #e8edf3;
+    text-align: center;
+    font-size: 12.5px;
+    font-weight: 600;
+    color: #1e3a6a;
+}
+
+.algo-card.selected .algo-card-footer {
+    background: #1e3a6a;
+    color: white;
+}
+
+.algo-card-badge {
+    display: inline-block;
+    font-size: 10.5px;
+    padding: 2px 8px;
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.18);
+    margin-left: 6px;
+}
+
+/* ═══════════════════════════ Step 2 grid setup ═══════════════════════════ */
+.setup-panel {
+    max-width: 640px;
+    margin: 0 auto;
+    background: white;
+    border: 1px solid #dde4ee;
+    border-radius: 10px;
+    padding: 22px 26px;
+}
+
+.setup-note {
+    font-size: 12px;
+    color: #888;
+    font-style: italic;
+    margin-top: 10px;
+}
+
+/* ═══════════════════════════ Analysis step layout ═══════════════════════════ */
+.substep-explain {
+    background: #f5f8fc;
+    border: 1px solid #dde4ee;
+    border-radius: 8px;
+    padding: 14px 18px;
+    margin-bottom: 12px;
+    font-size: 13px;
+    color: #333;
+    line-height: 1.6;
+}
+
+.substep-explain.deep {
+    background: #eaf1fb;
+    border-color: #b9cbe8;
+}
+
+.substep-controls {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    margin-bottom: 14px;
+    flex-wrap: wrap;
+}
+
+.substep-progress {
+    font-size: 12.5px;
+    color: #666;
+    font-family: monospace;
+}
+
+.btn-primary {
+    padding: 8px 18px;
+    border-radius: 6px;
+    border: 1px solid #1e3a6a;
+    background: #1e3a6a;
+    color: white;
+    font-size: 13px;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.btn-primary:hover {
+    background: #14284d;
+}
+
+.btn-primary:disabled {
+    background: #aab4c2;
+    border-color: #aab4c2;
+    cursor: not-allowed;
+}
+
+.btn-secondary {
+    padding: 8px 18px;
+    border-radius: 6px;
+    border: 1px solid #bcc5d0;
+    background: white;
+    color: #333;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-secondary:hover {
+    background: #f0f3f7;
+}
+
+.btn-link {
+    background: none;
+    border: none;
+    color: #1e3a6a;
+    font-size: 12.5px;
+    text-decoration: underline;
+    cursor: pointer;
+    padding: 0;
+}
+
+.btn-pale {
+    padding: 6px 14px;
+    border-radius: 6px;
+    border: 1px solid #e2e6ec;
+    background: #f2f4f7;
+    color: #556;
+    font-size: 12.5px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-pale:hover {
+    background: #e8ebef;
+}
+
+/* ═══════════════════════════ Grid cell styling ═══════════════════════════ */
+.oa-table {
+    border-collapse: separate;
+    border-spacing: 6px;
+}
+
+.oa-table th {
+    font-size: 12px;
+    font-family: monospace;
+    padding: 3px;
+    color: #667;
+}
+
+.oa-table td {
+    border: 1.5px solid #ccc;
+    min-width: 64px;
+    min-height: 56px;
+    padding: 4px 6px;
+    text-align: center;
+    vertical-align: middle;
+    font-size: 12.5px;
+    font-family: monospace;
+    background: white;
+    border-radius: 4px;
+    position: relative;
+    transition: all 0.15s;
+}
+
+.oa-table td.col-hover {
+    background: #eef3fa;
+}
+
+.oa-table td.target-hover {
+    background: #fff3cd;
+}
+
+.oa-table td .packet-badge {
+    display: inline-block;
+    padding: 1px 5px;
+    border-radius: 4px;
+    border: 2px solid #bbb;
+    position: relative;
+}
+
+.oa-table td .packet-badge.colored {
+    font-weight: 600;
+}
+
+/* Directional arrow shown on packets during greedy row/col routing */
+.move-arrow {
+    display: inline-block;
+    margin-left: 4px;
+    font-weight: 900;
+    color: #c0392b;
+}
+
+/* ═══════════════════════════ Routing graph SVG ═══════════════════════════ */
+.routing-graph-svg {
+    width: 100%;
+    height: auto;
+    display: block;
+}
+
+.rg-edge {
+    stroke-width: 1.6;
+    transition: all 0.15s;
+}
+
+.rg-edge.uncolored {
+    stroke: #ccc;
+}
+
+.rg-edge.faded {
+    opacity: 0.12;
+}
+
+.rg-edge.highlighted {
+    stroke-width: 3;
+    opacity: 1 !important;
+}
+
+.rg-node {
+    stroke: white;
+    stroke-width: 1.5;
+    transition: all 0.15s;
+}
+
+.rg-node-label {
+    font-size: 11px;
+    font-family: monospace;
+    fill: #333;
+}
+
+.rg-path-label {
+    font-size: 10px;
+    font-family: monospace;
+    font-weight: bold;
+    fill: #e07b1a;
+}
+
+/* ═══════════════════════════ Side-by-side graph + grid ═══════════════════════════ */
+.matching-layout {
+    display: flex;
+    gap: 24px;
+    align-items: flex-start;
+    flex-wrap: wrap;
+}
+
+.matching-grid-col {
+    flex-shrink: 0;
+}
+
+.matching-graph-col {
+    flex: 1;
+    min-width: 300px;
+    max-width: 480px;
+}
+
+.matching-grid-col.hidden-grid {
+    display: none;
+}
+
+/* ═══════════════════════════ Tooltip ═══════════════════════════ */
+.oa-tooltip {
+    position: fixed;
+    z-index: 9999;
+    background: #1a2a4a;
+    color: white;
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-size: 12px;
+    line-height: 1.6;
+    max-width: 300px;
+    pointer-events: none;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
+    display: none;
+}
+
+.oa-tooltip strong {
+    color: #ffd27a;
+}
+
+/* ═══════════════════════════ Growing microstep list ═══════════════════════════ */
+.microstep-list {
+    list-style: none;
+    padding: 8px 6px;
+    margin: 10px 0;
+    font-size: 12.5px;
+    color: #333;
+    max-height: 175px;
+    overflow-y: auto;
+    border: 1px solid #eef1f5;
+    border-radius: 8px;
+    background: #fbfcfe;
+    scroll-behavior: smooth;
+}
+
+.microstep-list li {
+    padding: 6px 10px 6px 30px;
+    position: relative;
+    border-left: 2px solid #dde4ee;
+    margin-left: 8px;
+}
+
+.microstep-list li::before {
+    content: '\25CB';
+    position: absolute;
+    left: 4px;
+    top: 6px;
+    color: #bbb;
+    font-size: 14px;
+}
+
+.microstep-list li.done::before {
+    content: '\2713';
+    color: #2f9e58;
+    font-weight: bold;
+}
+
+.microstep-list li.success {
+    background: #eafaf0;
+    border-left-color: #2f9e58;
+}
+
+.microstep-list li.follow {
+    background: #fdf6e3;
+    border-left-color: #e0b400;
+}
+
+/* ═══════════════════════════ Result banner ═══════════════════════════ */
+.result-banner {
+    margin-top: 20px;
+    padding: 16px 20px;
+    border-radius: 8px;
+    background: linear-gradient(135deg, #e8f7ee, #f0fbf4);
+    border: 1px solid #b6e3c6;
+    display: flex;
+    gap: 24px;
+    flex-wrap: wrap;
+}
+
+.result-stat {
+    text-align: center;
+    max-width: 260px;
+}
+
+.result-stat .num {
+    font-size: 22px;
+    font-weight: 700;
+    color: #1e7a3f;
+    font-family: monospace;
+}
+
+.result-stat .label {
+    font-size: 11.5px;
+    color: #4a7a5a;
+}
+
+@media (max-width: 900px) {
+    .matching-layout {
+        flex-direction: column;
+    }
+}
+
+/* ═══════════════════════════ Mesh size input row ═══════════════════════════ */
+.input-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 14px;
+    color: #333;
+}
+
+.mesh-input {
+    width: 64px;
+    padding: 6px 8px;
+    border: 1px solid #bcc5d0;
+    border-radius: 6px;
+    font-size: 14px;
+    text-align: center;
+    font-family: monospace;
+}
