@@ -99,7 +99,6 @@
 
 .algo-card:hover {
     border-color: #6a8ac0;
-    transform: translateY(-2px);
     box-shadow: 0 6px 18px rgba(30, 58, 106, 0.12);
 }
 
@@ -416,16 +415,20 @@
     gap: 24px;
     align-items: flex-start;
     flex-wrap: wrap;
+    min-width: 0;
 }
 
+/* Side-by-side columns */
 .matching-grid-col {
-    flex-shrink: 0;
+    flex: 1 1 340px;
+    min-width: 0;
+    max-width: 100%;
 }
 
 .matching-graph-col {
-    flex: 1;
-    min-width: 300px;
-    max-width: 480px;
+    flex: 1 1 340px;
+    min-width: 0;
+    max-width: 100%;
 }
 
 .matching-grid-col.hidden-grid {
@@ -534,6 +537,43 @@
     }
 }
 
+/* ═══════════════════════════ Green result banner ═══════════════════════════ */
+
+.result-banner--green {
+    background: linear-gradient(135deg, #e8f7ee, #f0fbf4);
+    border-color: #b6e3c6;
+}
+
+/* ═══════════════════════════ Responsive ═══════════════════════════ */
+@media (max-width: 700px) {
+    .algo-cards { flex-direction: column; }
+    .algo-card { min-width: 0; max-width: 100%; }
+
+    .oa-table td {
+        min-width: 44px;
+        min-height: 40px;
+        font-size: 11px;
+        padding: 2px 4px;
+    }
+    .oa-table th { font-size: 10px; }
+
+    .matching-graph-col { min-width: 0; }
+    .input-row { flex-wrap: wrap; justify-content: center; }
+    .substep-explain { font-size: 12px; padding: 10px 12px; }
+    .coloring-desc-text { font-size: 12px; }
+}
+
+@media (max-width: 480px) {
+    .oa-table td {
+        min-width: 32px;
+        min-height: 32px;
+        font-size: 10px;
+        padding: 2px;
+    }
+    .oa-table th { font-size: 9px; }
+    .btn-primary, .btn-secondary { font-size: 12px; padding: 6px 12px; }
+}
+
 /* ═══════════════════════════ Mesh size input row ═══════════════════════════ */
 .input-row {
     display: flex;
@@ -551,4 +591,182 @@
     font-size: 14px;
     text-align: center;
     font-family: monospace;
+}
+/* Skip buttons */
+.skip-all-row {
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: 14px;
+    padding-bottom: 10px;
+    border-bottom: 1px dashed #dde3ec;
+}
+.skip-all-row .btn-pale {
+    font-size: 12px;
+    opacity: 0.75;
+    padding: 6px 14px;
+}
+.skip-all-row .btn-pale:hover { opacity: 1; }
+
+.phase-action-row {
+    margin-top: 14px;
+    min-height: 40px;
+}
+
+/* Before / after layout */
+.before-after-layout {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    margin-top: 16px;
+    flex-wrap: wrap;
+}
+.before-after-col {
+    flex: 1 1 320px;
+    min-width: 260px;
+}
+.before-after-label {
+    font-weight: 600;
+    font-size: 12.5px;
+    color: #1a2a4a;
+    margin-bottom: 6px;
+}
+.before-after-arrow {
+    font-size: 28px;
+    color: #2a4a7a;
+    flex: 0 0 auto;
+    align-self: center;
+}
+@media (max-width: 800px) {
+    .before-after-layout { flex-direction: column; }
+    .before-after-arrow { transform: rotate(90deg); }
+}
+
+/* ═══════════════════════════ Coloring timeline (control box) ═══════════════════════════ */
+/* Stack order */
+.coloring-stack {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+.coloring-stack > .matching-toggle-row { order: 1; }
+.coloring-stack > .matching-layout { order: 2; }
+.coloring-stack > .coloring-control-box { order: 3; margin-top: 14px; }
+.coloring-stack > .coloring-footnote { order: 4; font-size: 11px; color: #888; margin-top: 8px; }
+
+.matching-toggle-row {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-bottom: 10px;
+}
+.matching-toggle-btn { font-size: 12px; }
+
+.coloring-control-box {
+    background: #f4f7fc;
+    border: 1px solid #c9d6ea;
+    border-radius: 8px;
+    padding: 14px 16px;
+}
+.coloring-ball-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+.coloring-nav-btn {
+    flex: 0 0 auto;
+    padding: 8px 14px;
+    font-size: 14px;
+}
+/* ── K-N: επιλογέας υπο-φάσης μέσα σε κάθε sub-mesh ── */
+.kn-col-head {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-weight: 700;
+    margin-bottom: 6px;
+}
+.kn-col-toggle {
+    flex: 0 0 auto;
+    width: 20px;
+    height: 20px;
+    line-height: 1;
+    padding: 0;
+    font-size: 13px;
+    font-weight: 700;
+    color: #2a4a7a;
+    background: #fff;
+    border: 1px solid #c3cbd6;
+    border-radius: 4px;
+    cursor: pointer;
+}
+.kn-col-toggle:hover { background: #eef3fa; }
+.matching-layout > .is-collapsed { flex: 0 0 auto; }
+
+.kn-subphase-row {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    flex-wrap: wrap;
+    margin-bottom: 16px;
+}
+.kn-subphase-label {
+    font-size: 12.5px;
+    font-weight: 700;
+    color: #2a4a7a;
+    margin-right: 2px;
+}
+
+.step-nav-label {
+    flex: 0 0 auto;
+    font-size: 12.5px;
+    font-weight: 700;
+    color: #2a4a7a;
+    white-space: nowrap;
+    min-width: 58px;
+    max-width: 190px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.coloring-balls-inner {
+    flex: 1 1 auto;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+    min-height: 13px;
+}
+.coloring-ball {
+    width: 13px;
+    height: 13px;
+    border-radius: 50%;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    opacity: 0.55;
+    flex-shrink: 0;
+}
+.coloring-ball.current {
+    opacity: 1;
+    box-shadow: 0 0 0 2px white, 0 0 0 3.5px #1a2a4a;
+}
+
+.coloring-desc-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+.coloring-desc-text {
+    flex: 1 1 auto;
+    font-size: 13.5px;
+    line-height: 1.55;
+}
+.coloring-skip-row {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    margin-top: 10px;
+}
+@media (max-width: 700px) {
+    .coloring-desc-row { flex-direction: column; align-items: stretch; }
 }

@@ -1,12 +1,3 @@
-/* ════════════════════════════════════════════════════════════════
-   Βασικός Offline Αλγόριθμος (column-row-column, 3*sqrt(N)-3 steps, queue=1)
-   Βασισμένος στο έργο του T.F. Leighton (Introduction to Parallel
-   Algorithms & Architectures, section 1.7).
-   Coloring: gray/yellow alternating-path search (Hall's Matching Theorem).
-   Greedy routing (Phases 1c/2/3): farthest-first edge-contention priority
-   (Lemma 1.5, section 1.7.1) -- n-1 steps, queue=1 (edge-contention sense).
-   ════════════════════════════════════════════════════════════════ */
-
 let oaTooltipEl = null;
 function ensureTooltip() {
     if (oaTooltipEl) return oaTooltipEl;
@@ -35,7 +26,7 @@ function colorLabel(k, colors) {
     return '<span style="color:' + colors[k - 1] + '; font-weight:700;">' + word + '</span>';
 }
 
-/* ── Gray/yellow alternating-path search, full step recording ── */
+/* Hall alternating path */
 function extendMatchingTraced(K, edgesByK, matchOfM, visitedM, color, path, steps) {
     for (const edge of edgesByK[K]) {
         if (visitedM.has(edge.M)) continue;
@@ -74,11 +65,123 @@ function applyFlip(path, color, matchOfM) {
     }
 }
 
-/* ── Greedy line routing: farthest-first edge-contention priority (Lemma 1.5) ──
-   items: array of {id, cur, dest} (0-indexed positions along the line).
-   Returns { snapshots, moveLog, steps } where snapshots[t] is the state
-   after t rounds (snapshots[0] = initial), and moveLog[t] describes what
-   moved during round t+1 (for arrows / step display). */
+/* Shared coloring machinery */
+function oaBuildDisplayChunks(rawSteps, startK) {
+    const chunks = [{ type: 'select-K', K: startK, isNewSearch: true }];
+    rawSteps.forEach(function (ev) {
+        if (ev.type === 'try-gray') {
+            chunks.push({ type: 'try-gray', edge: ev.edge });
+        } else if (ev.type === 'found-free') {
+            chunks.push({ type: 'result-free', edge: ev.edge });
+        } else if (ev.type === 'follow-existing') {
+            chunks.push({ type: 'result-follow', edge: ev.edge });
+            chunks.push({ type: 'select-K', K: ev.edge.K, isNewSearch: false });
+        } else if (ev.type === 'backtrack') {
+            chunks.push({ type: 'backtrack', edge: ev.edge });
+        }
+    });
+    return chunks;
+}
+
+function oaComputeColoringOverlay(masterSteps, uptoIdx) {
+    const overlay = {};
+    let sCounter = 0, dCounter = 0, labels = {}, currentLabel = '';
+    for (let i = 0; i <= uptoIdx; i++) {
+        const ev = masterSteps[i];
+        if (!ev) continue;
+        if (ev.type === 'select-K') {
+            if (ev.isNewSearch) { sCounter = 0; dCounter = 0; labels = {}; }
+            const sLabel = 'S' + sCounter; sCounter++;
+            labels['K' + ev.K] = sLabel;
+            if (i === uptoIdx) currentLabel = sLabel;
+        } else if (ev.type === 'try-gray') {
+            overlay[ev.edge.packetId] = 'yellow-pending';
+            const dLabel = 'D' + dCounter; dCounter++;
+            labels['M' + ev.edge.M] = dLabel;
+            if (i === uptoIdx) currentLabel = dLabel;
+        } else if (ev.type === 'result-free') {
+            if (ev.path) ev.path.forEach(function (e, idx2) { overlay[e.packetId] = (idx2 % 2 === 0) ? ev.color : null; });
+            labels = {};
+        } else if (ev.type === 'backtrack') {
+            overlay[ev.edge.packetId] = null;
+        }
+    }
+    return { overlay: overlay, labels: labels, currentLabel: currentLabel };
+}
+
+function oaColorRegularBipartiteTraced(edgeList, m) {
+    const edgesByK = Array.from({ length: m + 1 }, function () { return []; });
+    const adapters = edgeList.map(function (e, i) {
+        const a = { K: e.left + 1, M: e.right + 1, packetId: i, color: null, ref: e };
+        edgesByK[a.K].push(a);
+        return a;
+    });
+
+    const masterSteps = [{ type: 'init-nodes' }, { type: 'init-edges' }];
+    const roundRanges = [];
+    for (let color = 1; color <= m; color++) {
+        const matchOfM = new Array(m + 1).fill(null);
+        const roundStart = masterSteps.length;
+        for (let K = 1; K <= m; K++) {
+            const visitedM = new Set();
+            const path = [];
+            const steps = [];
+            const result = extendMatchingTraced(K, edgesByK, matchOfM, visitedM, color, path, steps);
+            const chunks = oaBuildDisplayChunks(steps, K);
+            chunks.forEach(function (c) { c.color = color; });
+            if (result) {
+                chunks.forEach(function (c) { if (c.type === 'result-free') c.path = result; });
+                applyFlip(result, color, matchOfM);
+            }
+            masterSteps.push.apply(masterSteps, chunks);
+        }
+        roundRanges.push({ color: color, start: roundStart, end: masterSteps.length - 1 });
+    }
+    masterSteps.push({ type: 'final' });
+    adapters.forEach(function (a) { a.ref.hallColor = a.color; });
+    return { masterSteps: masterSteps, roundRanges: roundRanges, adapters: adapters };
+}
+
+function oaDescribeColoringStep(ev, label, ctx) {
+    if (!ev) return '';
+    const colors = ctx.colors;
+    const color = ev.color;
+    const kName = ctx.kName || function (K) { return 'K' + K; };
+    const mName = ctx.mName || function (M) { return 'M' + M; };
+    switch (ev.type) {
+        case 'init-nodes':
+            return ctx.initNodes;
+        case 'init-edges':
+            return ctx.initEdges;
+        case 'final':
+            return ctx.final;
+        case 'select-K':
+            return ev.isNewSearch
+                ? (isGrLang()
+                    ? ('Βρίσκουμε έναν Κόκκινο κόμβο που δεν έχει ' + colorLabel(color, colors) + ' ακμή. Επιλέξαμε τον <strong>' + kName(ev.K) + '</strong> κόμβο (' + label + ')')
+                    : ('We find a red node with no ' + colorLabel(color, colors) + ' edge. We selected node <strong>' + kName(ev.K) + '</strong> (' + label + ')'))
+                : (isGrLang()
+                    ? ('Ο Κόκκινος κόμβος <strong>' + kName(ev.K) + '</strong> (' + label + ') πρέπει τώρα να βρει άλλη ακμή.')
+                    : ('Red node <strong>' + kName(ev.K) + '</strong> (' + label + ') must now find a different edge.'));
+        case 'try-gray':
+            return isGrLang()
+                ? ('Διαλέγουμε μια ελεύθερη/γκρι ακμή του προς Μπλε κόμβο. Επιλέξαμε την ακμή που δείχνει τον <strong>' + mName(ev.edge.M) + '</strong> κόμβο (' + label + '), την οποία χρωματίζουμε προσωρινά κίτρινη.')
+                : ('We pick a free/gray edge towards a blue node. We selected the edge pointing to node <strong>' + mName(ev.edge.M) + '</strong> (' + label + '), which we temporarily color yellow.');
+        case 'result-free':
+            return isGrLang()
+                ? ('Ελέγχουμε αν ο <strong>' + mName(ev.edge.M) + '</strong> Μπλε κόμβος έχει ακμή με ' + colorLabel(color, colors) + '. <strong>Δεν έχει!</strong> Επιτυχές μονοπάτι. Χρωματίζουμε όλες τις κίτρινες ακμές σε ' + colorLabel(color, colors) + ' και όλες τις διακεκομμένες σε γκρι.')
+                : ('We check whether node <strong>' + mName(ev.edge.M) + '</strong> has a ' + colorLabel(color, colors) + ' edge. <strong>It does not!</strong> Successful path. We color all yellow edges ' + colorLabel(color, colors) + ' and all dashed edges gray.');
+        case 'result-follow':
+            return isGrLang()
+                ? ('Ελέγχουμε αν ο <strong>' + mName(ev.edge.M) + '</strong> Μπλε κόμβος έχει ακμή με ' + colorLabel(color, colors) + '. <strong>Έχει!</strong> Την ακμή <strong>' + kName(ev.edge.K) + '-' + mName(ev.edge.M) + '</strong>. Την ακολουθούμε πίσω στον Κόκκινο <strong>' + kName(ev.edge.K) + '</strong> κόμβο.')
+                : ('We check whether node <strong>' + mName(ev.edge.M) + '</strong> has a ' + colorLabel(color, colors) + ' edge. <strong>It does!</strong> The edge <strong>' + kName(ev.edge.K) + '-' + mName(ev.edge.M) + '</strong>. We follow it back to red node <strong>' + kName(ev.edge.K) + '</strong>.');
+        case 'backtrack':
+            return isGrLang() ? 'Αδιέξοδο — επιστρέφουμε.' : 'Dead end — backtracking.';
+    }
+    return '';
+}
+
+/* Greedy line routing */
 function simulateGreedyLine(items) {
     const n = items.length;
     let positions = Array.from({ length: n }, () => []);
@@ -137,12 +240,13 @@ function simulateGreedyLine(items) {
     return { snapshots: snapshots, moveLog: moveLog, steps: round };
 }
 
-/* ════════════════════════════════════════════════════════════════
-   Main entry point
-   ════════════════════════════════════════════════════════════════ */
-function offlineAlgorithm() {
+/* Cards */
+function buildBasicAlgorithmCards() {
     const n = parseInt(document.getElementById('sideN').value);
-    if (isNaN(n) || n < 2) { alert('Please enter a valid grid size.'); return; }
+    if (isNaN(n) || n < 2) {
+        alert(isGrLang() ? 'Παρακαλώ εισάγετε έγκυρο μέγεθος πλέγματος.' : 'Please enter a valid mesh size.');
+        return null;
+    }
 
     const packets = [];
     let idCounter = 0;
@@ -150,15 +254,11 @@ function offlineAlgorithm() {
         for (let c = 1; c <= n; c++) {
             const input = document.querySelector('#tableContainer input[data-row="' + (r - 1) + '"][data-col="' + (c - 1) + '"]');
             const v = input.value.trim();
-            if (v === '') { alert('Cell (' + r + ',' + c + ') is empty. Please fill all cells.'); return; }
+            if (v === '') { alert('Cell (' + r + ',' + c + ') is empty. Please fill all cells.'); return null; }
             const parts = v.split(',').map(Number);
             packets.push({ id: idCounter++, sourceRow: r, sourceCol: c, destRow: parts[0], destCol: parts[1], color: null });
         }
     }
-
-    document.getElementById('tableContainer').innerHTML = '';
-    const container = document.getElementById('phaseContainer');
-    container.innerHTML = '';
 
     const colors = oaColorPalette(n);
 
@@ -177,205 +277,227 @@ function offlineAlgorithm() {
         currentK: 0,
         steps: null,
         stepIdx: 0,
-        afterP1: null,
-        afterP2: null,
+        afterP1: null, afterP1Steps: 0,
+        afterP2: null, afterP2Steps: 0,
         edgesBuilt: false
     };
 
-    const subNav = document.createElement('div');
-    subNav.className = 'wizard-tabs';
-    subNav.style.marginBottom = '18px';
-    const subTabsGr = ['Φάση 1 · Χρωματισμός', 'Φάση 2 · Γραμμές', 'Φάση 3 · Στήλες'];
-    const subTabsEn = ['Phase 1 · Coloring', 'Phase 2 · Rows', 'Phase 3 · Columns'];
-    const subTabEls = [];
-    subTabsEn.forEach(function (_, i) {
-        const tab = document.createElement('div');
-        tab.className = 'wizard-tab' + (i === 0 ? ' active' : ' disabled');
-        tab.innerHTML = '<span class="step-num">' + (i + 1) + '</span><span lang="en">' + subTabsEn[i] + '</span><span lang="gr">' + subTabsGr[i] + '</span>';
-        subNav.appendChild(tab);
-        subTabEls.push(tab);
-    });
-    container.appendChild(subNav);
+    function colorWordFor(lang, k) {
+        const word = (lang === 'gr' ? 'Χρώμα ' : 'Color ') + k;
+        return '<span style="color:' + colors[k - 1] + '; font-weight:700;">' + word + '</span>';
+    }
 
-    const stepBody = document.createElement('div');
-    container.appendChild(stepBody);
+    function actualStepsHtml(steps) {
+        return '<span lang="en"> For our instance the routing took <strong>' + steps + '</strong> step' + (steps === 1 ? '' : 's') + '.</span>' +
+            '<span lang="gr"> Για το στιγμιότυπο μας η δρομολόγηση χρειάστηκε <strong>' + steps + '</strong> ' + (steps === 1 ? 'βήμα' : 'βήματα') + '.</span>';
+    }
+    function appendActualSteps(descEl, steps) {
+        if (!descEl || descEl.dataset.actualStepsShown === '1') return;
+        descEl.dataset.actualStepsShown = '1';
+        descEl.insertAdjacentHTML('beforeend', actualStepsHtml(steps));
+    }
 
-    function activateSubTab(i) { subTabEls.forEach(function (t, j) { t.classList.toggle('active', j === i); }); }
-    function markSubTabDone(i) { subTabEls[i].classList.remove('disabled'); subTabEls[i].classList.add('done'); }
-    function unlockSubTab(i) { subTabEls[i].classList.remove('disabled'); }
+    const bigIdeaHtml =
+        '<span lang="en">We can route a square <span class="glossary-term" data-term="mesh">mesh</span> (&radic;N rows &times; &radic;N columns) in 3&radic;N&minus;3 <span class="glossary-term" data-term="step">steps</span>, keeping the maximum queue size at every processor = 1, by running our algorithm in 3 phases.<br><br>' +
+        'In Phase 1 we permute <span class="glossary-term" data-term="packet">packets</span> within each column so that at most one <span class="glossary-term" data-term="packet">packet</span> in each row is destined for each column. In Phase 2 we route every <span class="glossary-term" data-term="packet">packet</span> within its row to its destination column. In Phase 3 we route every <span class="glossary-term" data-term="packet">packet</span> within its column to its destination row (i.e. to its final destination).<br><br>' +
+        'The hard part — and the only <span class="glossary-term" data-term="offline">offline</span> step — is finding the Phase 1 column permutation such that at most one <span class="glossary-term" data-term="packet">packet</span> per row is destined for any given column. Once that is done, each phase is easy to implement in &radic;N&minus;1 <span class="glossary-term" data-term="step">steps</span> (queue&nbsp;=&nbsp;1) using a <span class="glossary-term" data-term="greedy">greedy</span> algorithm to route <span class="glossary-term" data-term="packet">packets</span> within each row or column.</span>' +
+        '<span lang="gr">Μπορούμε να δρομολογήσουμε ένα τετραγωνικό <span class="glossary-term" data-term="mesh">πλέγμα</span> (&radic;Ν γραμμές &times; &radic;Ν στήλες) σε 3&radic;Ν&minus;3 <span class="glossary-term" data-term="step">βήματα</span>, διατηρώντας σε κάθε επεξεργαστή μέγιστο μέγεθος ουράς = 1, εκτελώντας τον αλγόριθμό μας σε 3 φάσεις.<br><br>' +
+        'Στη Φάση 1, μεταθέτουμε τα <span class="glossary-term" data-term="packet">πακέτα</span> εντός κάθε στήλης, έτσι ώστε το πολύ ένα <span class="glossary-term" data-term="packet">πακέτο</span> σε κάθε γραμμή να προορίζεται για κάθε στήλη. Στη Φάση 2, δρομολογούμε κάθε <span class="glossary-term" data-term="packet">πακέτο</span> εντός της γραμμής του προς τη σωστή στήλη. Στη Φάση 3, δρομολογούμε κάθε <span class="glossary-term" data-term="packet">πακέτο</span> εντός της στήλης του προς τη σωστή γραμμή (δηλαδή, στον προορισμό του).<br><br>' +
+        'Το δύσκολο κομμάτι — και το μόνο <span class="glossary-term" data-term="offline">offline</span> τμήμα — είναι να βρεθεί ο τρόπος μετάθεσης των <span class="glossary-term" data-term="packet">πακέτων</span> εντός κάθε στήλης κατά τη Φάση 1, ώστε να υπάρχει το πολύ ένα <span class="glossary-term" data-term="packet">πακέτο</span> σε κάθε γραμμή που να προορίζεται για οποιαδήποτε στήλη. Μόλις γίνει αυτό, κάθε φάση υλοποιείται εύκολα σε &radic;Ν&minus;1 <span class="glossary-term" data-term="step">βήματα</span> (ουρά&nbsp;=&nbsp;1), χρησιμοποιώντας τον <span class="glossary-term" data-term="greedy">άπληστο</span> αλγόριθμο για τη δρομολόγηση των <span class="glossary-term" data-term="packet">πακέτων</span> εντός κάθε γραμμής ή στήλης.</span>';
 
-    renderPhase1();
-
-    /* ════════════════════════ PHASE 1 : Coloring ════════════════════════ */
-    function renderPhase1() {
-        activateSubTab(0);
-        stepBody.innerHTML = '';
-
-        const bigIdea = document.createElement('div');
-        bigIdea.className = 'substep-explain';
-        bigIdea.innerHTML =
-            '<span lang="en"><strong>Basic idea:</strong> a greedy algorithm can route packets on a one-dimensional array of &radic;N processors in &radic;N &minus; 1 steps, during which no 2 packets will ever "compete" for the same transfer edge (queue size on every edge = 1).<br><br>' +
-            'On a two-dimensional &radic;N &times; &radic;N mesh of processors, we can route N packets in time 2&radic;N &minus; 2 (&radic;N &minus; 1 per permutation) with 2 runs of the greedy algorithm (every packet goes to its destination row &rarr; every packet goes to its destination column, or vice versa). Such a sequence, however, creates the possibility of large queues forming, when 2+ packets try to move in the same direction over the same edge (in other words, when 2+ packets of the same row have the same destination column, and likewise for column/row).<br><br>' +
-            'We solve this queue-forming problem by executing one extra permutation at the start, essentially sending every packet to a new starting position. This permutation is computed off-line, and is such that in every row all packets end up with a distinct destination column.</span>' +
-            '<span lang="gr"><strong>Βασική Ιδέα:</strong> Ένας άπληστος αλγόριθμος μπορεί να δρομολογήσει πακέτα σε μονοδιάστατη διάταξη &radic;Ν επεξεργαστών σε &radic;Ν &minus; 1 βήματα, κατά τον οποίο ποτέ 2 πακέτα δεν θα "ανταγωνιστούν" για την ίδια ακμή μεταφοράς (ουρά σε κάθε ακμή = 1).<br><br>' +
-            'Σε ένα διδιάστατο &radic;N &times; &radic;N πλέγμα επεξεργαστών, μπορούμε με 2 εκτελέσεις άπληστου αλγόριθμου (κάθε πακέτο πάει στη γραμμή προορισμού του &rarr; κάθε πακέτο πάει στη στήλη προορισμού του ή το αντίστροφο) να δρομολογήσουμε Ν πακέτα σε χρόνο 2&radic;Ν &minus; 2 (&radic;Ν &minus; 1 ανά μετάθεση). Μια τέτοια αλληλουχία δημιουργεί όμως την πιθανότητα δημιουργίας ουρών μεγάλου μεγέθους, όταν 2+ πακέτα προσπαθήσουν να μετακινηθούν με την ίδια κατεύθυνση στην ίδια ακμή (ή άλλως όταν 2+ πακέτα της ίδιας γραμμής έχουν προορισμό την ίδια στήλη και αντίστοιχα για στήλη/γραμμή).<br><br>' +
-            'Λύνουμε αυτό το πρόβλημα δημιουργίας ουρών εκτελώντας μια επιπλέον μετάθεση στην αρχή, ουσιαστικά στέλνοντας κάθε πακέτο σε μια καινούρια αρχική θέση. Η μετάθεση υπολογίζεται off-line και είναι τέτοια ώστε σε κάθε γραμμή όλα τα πακέτα να έχουν προορισμό διαφορετική στήλη.</span>';
-        stepBody.appendChild(bigIdea);
-
-        const explain = document.createElement('div');
-        explain.className = 'substep-explain';
-        explain.innerHTML =
-            '<span lang="en"><strong>Goal of Phase 1:</strong> we rearrange each column so that all packets in every row end up with a distinct destination column. ' +
-            'This is the basic off-line part of the algorithm, and the most important one. To achieve it, we rely on the idea of a perfect matching, using Hall\'s Matching Theorem.</span>' +
-            '<span lang="gr"><strong>Στόχος της Φάσης 1:</strong> Κάνουμε αναδιάταξη κάθε στήλης με τρόπο τέτοιο ώστε όλα τα πακέτα σε κάθε γραμμή να έχουν ξεχωριστή στήλη προορισμού. ' +
-            'Η διαδικασία αυτή είναι το βασικό offline κομμάτι του αλγορίθμου αλλά και το σημαντικότερο. Για να το επιτύχουμε, βασιζόμαστε στην ιδέα του τέλειου ταιριάσματος, χρησιμοποιώντας το "Θεώρημα Ταιριάσματος του Hall".</span>';
-        stepBody.appendChild(explain);
-
-        const deepBox = document.createElement('div');
-        deepBox.className = 'substep-explain deep';
-        deepBox.innerHTML =
-            '<span lang="en">Each packet is characterized by the position it is in and its destination. We will build a graph that depicts all packets as edges connecting the packet\'s Position column to its Destination column. Using Hall\'s Matching Theorem, we will color each edge so that no node has two edges of the same color. We will then use these colors as destination rows, moving packets of the same color to the same row. This coloring guarantees that at no stage of the rearrangement will 2 packets ever be in conflict over the same transfer edge.</span>' +
-            '<span lang="gr">Κάθε πακέτο χαρακτηρίζεται από τη θέση που βρίσκεται και τον προορισμό του. Θα δημιουργήσουμε γράφημα που απεικονίζει όλα τα πακέτα ως ακμές που συνδέουν τη στήλη Θέσης του πακέτου με τη στήλη Προορισμού. Χρησιμοποιώντας το Θεώρημα Ταιριάσματος του Hall θα χρωματίσουμε κάθε ακμή με τέτοιο τρόπο, ώστε κανείς κόμβος να μην έχει ακμές με ίδιο χρώμα. Έπειτα θα χρησιμοποιήσουμε αυτά τα χρώματα ως γραμμές προορισμού, μεταφέροντας τα πακέτα ίδιου χρώματος στην ίδια γραμμή. Ο χρωματισμός αυτός μας εξασφαλίζει ότι σε καμία φάση της αναδιάταξης δεν θα βρεθούν 2 πακέτα σε σύγκρουση για την ίδια ακμή μεταφοράς.</span>';
-        stepBody.appendChild(deepBox);
-
-        const msList = document.createElement('ul');
-        msList.className = 'microstep-list';
-        stepBody.appendChild(msList);
-
-        function appendStep(html, cls) {
-            const li = document.createElement('li');
-            li.className = 'done' + (cls ? ' ' + cls : '');
-            li.innerHTML = html;
-            msList.appendChild(li);
-            if (typeof li.scrollIntoView === 'function') {
-                try { li.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); } catch (e) { /* no-op */ }
-            }
-            return li;
+    const bigIdeaCard = {
+        id: 'p1-bigidea', navLabel: '<span lang="en">Big Idea</span><span lang="gr">Βασική Ιδέα</span>', kind: 'action', theory: null, interactive: false,
+        render: function (body) {
+            const div = document.createElement('div');
+            div.className = 'substep-explain';
+            div.innerHTML = bigIdeaHtml;
+            body.appendChild(div);
         }
+    };
 
-        const buildEdgesLi = document.createElement('li');
-        buildEdgesLi.innerHTML = isGrLang()
-            ? ('Δημιουργούμε το γράφημα. Στην αριστερή πλευρά φτιάχνουμε &radic;N = ' + n + ' κόκκινους κόμβους που αντιπροσωπεύουν τη στήλη θέσης των πακέτων και στη δεξιά &radic;N = ' + n + ' μπλε κόμβους που αντιπροσωπεύουν τη στήλη προορισμού όλων των πακέτων.')
-            : ('We build the graph. On the left we create &radic;N = ' + n + ' red nodes representing the packets\' source column, and on the right &radic;N = ' + n + ' blue nodes representing the destination column.');
-        const buildEdgesBtn = document.createElement('button');
-        buildEdgesBtn.className = 'btn-primary';
-        buildEdgesBtn.style.marginTop = '8px';
-        buildEdgesBtn.innerHTML = '<span lang="en">Create Edges</span><span lang="gr">Δημιουργία Ακμών</span>';
-        buildEdgesLi.appendChild(document.createElement('br'));
-        buildEdgesLi.appendChild(buildEdgesBtn);
-        msList.appendChild(buildEdgesLi);
+    const hallTheory =
+        '<span lang="en"><strong>The goal of Phase 1</strong> is to permute packets within each column so that at most one packet per row is destined for any given column — which guarantees no two packets will conflict during the greedy routing of Phases 2 and 3.<br><br>' +
+        'To achieve each permutation, we color each row of the mesh with a different color (Color 1 = Row 1, etc.) and color the packets in each column so that packets of the same color have a different destination column.<br><br>' +
+        'We then build a bipartite graph: on one side &radic;N red nodes (K1…K&radic;N) representing each source column, on the other &radic;N blue nodes (M1…M&radic;N) representing each destination column. We connect them with edges representing packets: a packet at (a,b) with destination (c,d) gives edge K<sub>b</sub>&ndash;M<sub>d</sub>.<br><br>' +
+        'We then color each edge so that no node K has two edges of the same color (so each column\'s packets end up in different rows after rearrangement) and no node M has two edges of the same color (so each row ends up with different destination columns after rearrangement).<br><br>' +
+        'This is achieved using <span class="glossary-term" data-term="hall">Hall\'s Matching Theorem</span>, since our graph is bipartite and &radic;N-regular.</span>' +
+        '<span lang="gr"><strong>Ο στόχος της Φάσης 1</strong> είναι να μεταθέσουμε τα πακέτα εντός κάθε στήλης, έτσι ώστε το πολύ ένα πακέτο σε κάθε γραμμή να προορίζεται για κάθε στήλη — κάτι που εξασφαλίζει ότι δεν θα δημιουργηθούν ουρές κατά την εκτέλεση του άπληστου αλγορίθμου στις Φάσεις 2 και 3.<br><br>' +
+        'Για να επιτύχουμε κάθε μετάθεση, χαρακτηρίζουμε κάθε γραμμή του πλέγματος με διαφορετικό χρώμα (Χρώμα 1 αντιστοιχεί στη Γραμμή 1 κ.ο.κ.) και χρωματίζουμε τα πακέτα σε κάθε στήλη ώστε τα πακέτα ίδιου χρώματος να έχουν προορισμό διαφορετική στήλη.<br><br>' +
+        'Στη συνέχεια, δημιουργούμε ένα διμερές γράφημα: στη μια πλευρά &radic;N κόκκινους κόμβους (K1…K&radic;N) που αντιπροσωπεύουν κάθε στήλη θέσης και στην άλλη &radic;N μπλε κόμβους (M1…M&radic;N) που αντιπροσωπεύουν κάθε στήλη προορισμού. Ενώνουμε τους κόμβους με ακμές που αντιπροσωπεύουν τα πακέτα. Ένα πακέτο που βρίσκεται στη θέση (a,b) και έχει προορισμό (c,d) δίνει την ακμή K<sub>b</sub>&ndash;M<sub>d</sub>.<br><br>' +
+        'Χρωματίζουμε κάθε ακμή έτσι ώστε κανένας κόμβος Κ να μην έχει ακμές ίδιου χρώματος (άρα τα πακέτα κάθε στήλης θα έχουν διαφορετική γραμμή μετά τη μετάθεση) και κανένας κόμβος Μ να μην έχει ακμές ίδιου χρώματος (άρα μετά τη μετάθεση κάθε γραμμή έχει διαφορετικές στήλες προορισμού).<br><br>' +
+        'Αυτό επιτυγχάνεται με τη βοήθεια του <span class="glossary-term" data-term="hall">Θεωρήματος Ταιριάσματος του Hall</span>, αφού το γράφημά μας είναι διμερές και &radic;N-κανονικό.</span>';
+
+    const coloringCard = {
+        id: 'p1-coloring', navLabel: '<span lang="en">Phase 1: Coloring</span><span lang="gr">Φάση 1: Χρωματισμός</span>', kind: 'action', theory: hallTheory, interactive: true,
+        render: function (body, api) {
+
+            if (!state.masterSteps) {
+                const masterSteps = [{ type: 'init-nodes' }, { type: 'init-edges' }];
+                const roundRanges = [];
+                for (let color = 1; color <= n; color++) {
+                    const matchOfM = new Array(n + 1).fill(null);
+                    const roundStart = masterSteps.length;
+                    for (let K = 1; K <= n; K++) {
+                        const visitedM = new Set();
+                        const path = [];
+                        const steps = [];
+                        const result = extendMatchingTraced(K, edgesByK, matchOfM, visitedM, color, path, steps);
+                        const chunks = buildDisplayChunks(steps, K);
+                        chunks.forEach(function (c) { c.color = color; });
+                        if (result) {
+                            chunks.forEach(function (c) { if (c.type === 'result-free') c.path = result; });
+                            applyFlip(result, color, matchOfM);
+                        }
+                        masterSteps.push.apply(masterSteps, chunks);
+                    }
+                    roundRanges.push({ color: color, start: roundStart, end: masterSteps.length - 1 });
+                }
+                masterSteps.push({ type: 'final' });
+                state.masterSteps = masterSteps;
+                state.roundRanges = roundRanges;
+                state.timelineIdx = 0;
+                packets.forEach(function (p) { p.color = p.edgeRef.color; });
+            }
+
+            renderColoringUI(body, api);
+        }
+    };
+
+    const buildDisplayChunks = oaBuildDisplayChunks;
+
+    function computeColoringOverlay(uptoIdx) {
+        return oaComputeColoringOverlay(state.masterSteps, uptoIdx);
+    }
+
+    function describeColoringStep(ev, label) {
+        return oaDescribeColoringStep(ev, label, {
+            colors: colors,
+            initNodes: '<span lang="en">We build the graph. On the left we create &radic;N = ' + n + ' red nodes representing the packets\' source column, and on the right &radic;N = ' + n + ' blue nodes representing the destination column.</span>' +
+                '<span lang="gr">Δημιουργούμε το γράφημα. Στην αριστερή πλευρά φτιάχνουμε &radic;N = ' + n + ' κόκκινους κόμβους που αντιπροσωπεύουν τη στήλη θέσης των πακέτων και στη δεξιά &radic;N = ' + n + ' μπλε κόμβους που αντιπροσωπεύουν τη στήλη προορισμού όλων των πακέτων.</span>',
+            initEdges: '<span lang="en">We create the edges: each packet becomes an edge from its position column to its destination column.</span>' +
+                '<span lang="gr">Δημιουργούμε τις ακμές: κάθε πακέτο γίνεται ακμή από τη στήλη θέσης του προς τη στήλη προορισμού του.</span>',
+            final: '<span lang="en">Coloring is complete for all colors.</span><span lang="gr">Ο χρωματισμός ολοκληρώθηκε για όλα τα χρώματα.</span>'
+        });
+    }
+
+    function renderColoringUI(body, api) {
+        body.innerHTML = '';
+
+        const phaseHint = document.createElement('p');
+        phaseHint.className = 'substep-explain';
+        phaseHint.style.marginBottom = '14px';
+        phaseHint.innerHTML =
+            '<span lang="en">In Phase 1 we permute packets within each column so that at most one packet per row is destined for each column. Press «?» for details.</span>' +
+            '<span lang="gr">Στη Φάση 1, μεταθέτουμε τα πακέτα εντός κάθε στήλης, έτσι ώστε το πολύ ένα πακέτο σε κάθε γραμμή να προορίζεται για κάθε στήλη. Πάτησε το «?» για πληροφορίες.</span>';
+        body.appendChild(phaseHint);
+
+        const stack = document.createElement('div');
+        stack.className = 'coloring-stack';
+        body.appendChild(stack);
+
+        const toggleRow = document.createElement('div');
+        toggleRow.className = 'matching-toggle-row';
+        stack.appendChild(toggleRow);
+
+        const meshToggleBtn = document.createElement('button');
+        meshToggleBtn.className = 'btn-secondary matching-toggle-btn';
+        toggleRow.appendChild(meshToggleBtn);
+        const graphToggleBtn = document.createElement('button');
+        graphToggleBtn.className = 'btn-secondary matching-toggle-btn';
+        toggleRow.appendChild(graphToggleBtn);
 
         const layout = document.createElement('div');
         layout.className = 'matching-layout';
-        stepBody.appendChild(layout);
+        stack.appendChild(layout);
 
+        const gridWrap = document.createElement('div');
+        gridWrap.className = 'matching-grid-col';
+        layout.appendChild(gridWrap);
         const gridCol = document.createElement('div');
-        gridCol.className = 'matching-grid-col';
-        layout.appendChild(gridCol);
+        gridCol.style.minWidth = '0';
+        gridWrap.appendChild(gridCol);
 
+        const graphWrap = document.createElement('div');
+        graphWrap.className = 'matching-graph-col';
+        layout.appendChild(graphWrap);
         const graphCol = document.createElement('div');
-        graphCol.className = 'matching-graph-col';
-        layout.appendChild(graphCol);
+        graphCol.style.minWidth = '0';
+        graphWrap.appendChild(graphCol);
 
+        const controlBox = document.createElement('div');
+        controlBox.className = 'coloring-control-box';
+        stack.appendChild(controlBox);
+
+        const ballRow = document.createElement('div');
+        ballRow.className = 'coloring-ball-row';
+        const prevBtn = document.createElement('button');
+        prevBtn.className = 'btn-secondary coloring-nav-btn';
+        prevBtn.innerHTML = '<span lang="en">&larr;</span><span lang="gr">&larr;</span>';
+        const ballsInner = document.createElement('div');
+        ballsInner.className = 'coloring-balls-inner';
+        const nextBtn = document.createElement('button');
+        nextBtn.className = 'btn-primary coloring-nav-btn';
+        nextBtn.innerHTML = '<span lang="en">&rarr;</span><span lang="gr">&rarr;</span>';
+        ballRow.appendChild(prevBtn);
+        ballRow.appendChild(ballsInner);
+        ballRow.appendChild(nextBtn);
+        controlBox.appendChild(ballRow);
+
+        const descRow = document.createElement('div');
+        descRow.className = 'coloring-desc-row';
+        const descBox = document.createElement('div');
+        descBox.className = 'coloring-desc-text';
+        descRow.appendChild(descBox);
+        controlBox.appendChild(descRow);
+
+        const skipRow = document.createElement('div');
+        skipRow.className = 'coloring-skip-row';
+        const skipColorBtn = document.createElement('button');
+        skipColorBtn.className = 'btn-pale';
+        skipColorBtn.innerHTML = '<span lang="en">Skip to end of this color</span><span lang="gr">Παράλειψη έως το τέλος αυτού του χρώματος</span>';
         const skipAllBtn = document.createElement('button');
         skipAllBtn.className = 'btn-pale';
-        skipAllBtn.style.display = 'none';
-        skipAllBtn.style.marginBottom = '10px';
-        skipAllBtn.innerHTML = '<span lang="en">Skip all matchings</span><span lang="gr">Παράλειψη όλων των matchings</span>';
-        stepBody.insertBefore(skipAllBtn, layout);
-        skipAllBtn.addEventListener('click', skipAllRounds);
+        skipAllBtn.innerHTML = '<span lang="en">Skip to end &rarr;</span><span lang="gr">Παράλειψη έως το τέλος &rarr;</span>';
+        skipRow.appendChild(skipColorBtn);
+        skipRow.appendChild(skipAllBtn);
+        controlBox.appendChild(skipRow);
 
-        const rearrangeSection = document.createElement('div');
-        rearrangeSection.style.display = 'none';
-        rearrangeSection.style.marginTop = '26px';
-        rearrangeSection.style.borderTop = '1px dashed #cfd8e3';
-        rearrangeSection.style.paddingTop = '18px';
-        stepBody.appendChild(rearrangeSection);
-
-        function drawGrid() {
-            gridCol.innerHTML = '';
-            const table = document.createElement('table');
-            table.className = 'oa-table';
-            const headerRow = document.createElement('tr');
-            headerRow.appendChild(document.createElement('th'));
-            for (let c = 1; c <= n; c++) {
-                const th = document.createElement('th');
-                th.textContent = c;
-                th.style.cursor = 'pointer';
-                th.addEventListener('mouseenter', function () { highlightColumn(c); });
-                th.addEventListener('mouseleave', clearHighlight);
-                headerRow.appendChild(th);
-            }
-            table.appendChild(headerRow);
-
-            for (let r = 1; r <= n; r++) {
-                const tr = document.createElement('tr');
-                const rh = document.createElement('th'); rh.textContent = r; tr.appendChild(rh);
-                for (let c = 1; c <= n; c++) {
-                    const p = packets.find(function (pk) { return pk.sourceRow === r && pk.sourceCol === c; });
-                    const td = document.createElement('td');
-                    td.dataset.col = c;
-                    td.dataset.packetId = p.id;
-                    const badge = document.createElement('span');
-                    badge.className = 'packet-badge';
-                    badge.textContent = p.destRow + ',' + p.destCol;
-                    const ec = p.edgeRef.color;
-                    if (typeof ec === 'number') {
-                        badge.classList.add('colored');
-                        badge.style.borderColor = colors[ec - 1];
-                        badge.style.color = colors[ec - 1];
-                    } else if (ec === 'yellow-pending') {
-                        badge.style.borderColor = '#e0b400';
-                        badge.style.color = '#a07d00';
-                        badge.style.borderWidth = '3px';
-                        badge.style.fontWeight = '700';
-                    }
-                    td.appendChild(badge);
-
-                    td.addEventListener('mouseenter', function (e) {
-                        highlightSingleEdge(p.id);
-                        const ec2 = p.edgeRef.color;
-                        const colorLine = typeof ec2 === 'number'
-                            ? colorLabel(ec2, colors)
-                            : (ec2 === 'yellow-pending'
-                                ? (isGrLang() ? '<span style="color:#a07d00;">κίτρινο (προσωρινό)</span>' : '<span style="color:#a07d00;">yellow (tentative)</span>')
-                                : (isGrLang() ? '<span style="color:#999;">—</span>' : '<span style="color:#999;">—</span>'));
-                        const msg = isGrLang()
-                            ? ('Θέση [' + r + ',<span style="color:#c0392b;">' + c + '</span>]<br>' +
-                               'Προορισμός [' + p.destRow + ',<span style="color:#2255c0;">' + p.destCol + '</span>]<br>' +
-                               'Ακμή: K' + c + '-M' + p.destCol + '<br>' +
-                               'Χρώμα: ' + colorLine)
-                            : ('Position [' + r + ',<span style="color:#c0392b;">' + c + '</span>]<br>' +
-                               'Destination [' + p.destRow + ',<span style="color:#2255c0;">' + p.destCol + '</span>]<br>' +
-                               'Edge: K' + c + '-M' + p.destCol + '<br>' +
-                               'Color: ' + colorLine);
-                        showTooltip(e.clientX, e.clientY, msg);
-                    });
-                    td.addEventListener('mousemove', function (e) { showTooltip(e.clientX, e.clientY, oaTooltipEl.innerHTML); });
-                    td.addEventListener('mouseleave', function () { clearHighlight(); hideTooltip(); });
-
-                    tr.appendChild(td);
-                }
-                table.appendChild(tr);
-            }
-            gridCol.appendChild(table);
+        let meshHidden = !!state._coloringMeshHidden;
+        let graphHidden = !!state._coloringGraphHidden;
+        function applyMeshToggleLabel() {
+            gridWrap.style.display = meshHidden ? 'none' : '';
+            meshToggleBtn.innerHTML = meshHidden
+                ? '<span lang="en">Show mesh</span><span lang="gr">Εμφάνιση πλέγματος</span>'
+                : '<span lang="en">Hide mesh</span><span lang="gr">Απόκρυψη πλέγματος</span>';
+        }
+        function applyGraphToggleLabel() {
+            graphWrap.style.display = graphHidden ? 'none' : '';
+            graphToggleBtn.innerHTML = graphHidden
+                ? '<span lang="en">Show graph</span><span lang="gr">Εμφάνιση γραφήματος</span>'
+                : '<span lang="en">Hide graph</span><span lang="gr">Απόκρυψη γραφήματος</span>';
         }
 
-        let svgEl = null;
-        const ns = 'http://www.w3.org/2000/svg';
-        let spacing, leftX, rightX, width, height;
-        const pathLabelEls = {}; // K or M index -> text element for S/D annotation
-
-        function edgePathD(K, M, curveOffset) {
-            const y1 = 20 + (K - 1) * spacing + spacing / 2;
-            const y2 = 20 + (M - 1) * spacing + spacing / 2;
-            const midX = (leftX + rightX) / 2;
-            const midY = (y1 + y2) / 2 + curveOffset;
-            return 'M ' + leftX + ' ' + y1 + ' Q ' + midX + ' ' + midY + ' ' + rightX + ' ' + y2;
+        function refitZoomables() {
+            requestAnimationFrame(function () {
+                window.dispatchEvent(new Event('resize'));
+            });
         }
+        applyMeshToggleLabel();
+        applyGraphToggleLabel();
+        meshToggleBtn.addEventListener('click', function () {
+            meshHidden = !meshHidden;
+            state._coloringMeshHidden = meshHidden;
+            applyMeshToggleLabel();
+            refitZoomables();
+        });
+        graphToggleBtn.addEventListener('click', function () {
+            graphHidden = !graphHidden;
+            state._coloringGraphHidden = graphHidden;
+            applyGraphToggleLabel();
+            refitZoomables();
+        });
 
-        // curve offsets for parallel (same K->M) edges so they don't overlap visually
-        (function computeCurveOffsets() {
+        if (!packets[0].curveOffset && packets[0].curveOffset !== 0) {
             const pairGroups = {};
             packets.forEach(function (p) {
                 const key = p.sourceCol + '-' + p.destCol;
@@ -384,482 +506,321 @@ function offlineAlgorithm() {
             Object.values(pairGroups).forEach(function (group) {
                 group.forEach(function (p, idx) { p.curveOffset = (idx - (group.length - 1) / 2) * 16; });
             });
-        })();
+        }
 
-        function drawGraph() {
-            graphCol.innerHTML = '';
-            spacing = Math.max(18, Math.min(32, 420 / n));
-            height = n * spacing + 40;
-            width = 280;
-            leftX = 60; rightX = width - 60;
-
-            svgEl = document.createElementNS(ns, 'svg');
-            svgEl.setAttribute('viewBox', '0 0 ' + width + ' ' + height);
-            svgEl.classList.add('routing-graph-svg');
-
-            if (state.edgesBuilt) {
-                packets.forEach(function (p) {
-                    const path = document.createElementNS(ns, 'path');
-                    path.setAttribute('d', edgePathD(p.sourceCol, p.destCol, p.curveOffset));
-                    path.setAttribute('fill', 'none');
-                    path.classList.add('rg-edge');
-                    path.style.cursor = 'pointer';
-                    const ec = p.edgeRef.color;
-                    if (typeof ec === 'number') {
-                        path.style.stroke = colors[ec - 1];
-                        path.style.strokeWidth = '2';
-                    } else if (ec === 'yellow-pending') {
-                        path.style.stroke = '#e0b400';
-                        path.style.strokeWidth = '3.5';
-                    } else {
-                        path.classList.add('uncolored');
-                    }
-                    path.dataset.sourceCol = p.sourceCol;
-                    path.dataset.destCol = p.destCol;
-                    path.dataset.packetId = p.id;
-                    path.dataset.color = typeof ec === 'number' ? ec : '';
-                    path.addEventListener('mouseenter', function () { highlightSingleEdge(p.id); });
-                    path.addEventListener('mouseleave', clearHighlight);
-                    svgEl.appendChild(path);
-                });
-            }
-
+        const badgeByPacketId = {};
+        const tdByPacketId = {};
+        const table = document.createElement('table');
+        table.className = 'oa-table';
+        const headerRow = document.createElement('tr');
+        headerRow.appendChild(document.createElement('th'));
+        const colHeaderEls = {};
+        for (let c = 1; c <= n; c++) {
+            const th = document.createElement('th');
+            th.textContent = c;
+            th.style.cursor = 'pointer';
+            headerRow.appendChild(th);
+            colHeaderEls[c] = th;
+        }
+        table.appendChild(headerRow);
+        for (let r = 1; r <= n; r++) {
+            const tr = document.createElement('tr');
+            const rh = document.createElement('th'); rh.textContent = r; tr.appendChild(rh);
             for (let c = 1; c <= n; c++) {
-                const y = 20 + (c - 1) * spacing + spacing / 2;
-                const circleL = document.createElementNS(ns, 'circle');
-                circleL.setAttribute('cx', leftX); circleL.setAttribute('cy', y); circleL.setAttribute('r', 6);
-                circleL.setAttribute('fill', '#c0392b'); circleL.classList.add('rg-node');
-                circleL.style.cursor = 'pointer';
-                circleL.addEventListener('mouseenter', function () { highlightColumn(c); });
-                circleL.addEventListener('mouseleave', clearHighlight);
-                svgEl.appendChild(circleL);
-
-                const labelL = document.createElementNS(ns, 'text');
-                labelL.setAttribute('x', leftX - 14); labelL.setAttribute('y', y + 4);
-                labelL.setAttribute('text-anchor', 'end'); labelL.classList.add('rg-node-label');
-                labelL.textContent = 'K' + c;
-                svgEl.appendChild(labelL);
-
-                const pathLabelL = document.createElementNS(ns, 'text');
-                pathLabelL.setAttribute('x', leftX - 14); pathLabelL.setAttribute('y', y - 6);
-                pathLabelL.setAttribute('text-anchor', 'end'); pathLabelL.classList.add('rg-path-label');
-                svgEl.appendChild(pathLabelL);
-                pathLabelEls['K' + c] = pathLabelL;
-
-                const circleR = document.createElementNS(ns, 'circle');
-                circleR.setAttribute('cx', rightX); circleR.setAttribute('cy', y); circleR.setAttribute('r', 6);
-                circleR.setAttribute('fill', '#2255c0'); circleR.classList.add('rg-node');
-                svgEl.appendChild(circleR);
-
-                const labelR = document.createElementNS(ns, 'text');
-                labelR.setAttribute('x', rightX + 14); labelR.setAttribute('y', y + 4);
-                labelR.classList.add('rg-node-label');
-                labelR.textContent = 'M' + c;
-                svgEl.appendChild(labelR);
-
-                const pathLabelR = document.createElementNS(ns, 'text');
-                pathLabelR.setAttribute('x', rightX + 14); pathLabelR.setAttribute('y', y - 6);
-                pathLabelR.classList.add('rg-path-label');
-                svgEl.appendChild(pathLabelR);
-                pathLabelEls['M' + c] = pathLabelR;
+                const p = packets.find(function (pk) { return pk.sourceRow === r && pk.sourceCol === c; });
+                const td = document.createElement('td');
+                td.dataset.col = c;
+                td.dataset.packetId = p.id;
+                const badge = document.createElement('span');
+                badge.className = 'packet-badge';
+                badge.textContent = p.destRow + ',' + p.destCol;
+                td.appendChild(badge);
+                tr.appendChild(td);
+                badgeByPacketId[p.id] = badge;
+                tdByPacketId[p.id] = td;
             }
-
-            graphCol.appendChild(svgEl);
-
-            const caption = document.createElement('div');
-            caption.style.fontSize = '11.5px';
-            caption.style.color = '#888';
-            caption.style.marginTop = '4px';
-            caption.style.textAlign = 'center';
-            caption.innerHTML = isGrLang()
-                ? '<span style="color:#c0392b">&#9679;</span> στήλη θέσης &nbsp;&nbsp; <span style="color:#2255c0">&#9679;</span> στήλη προορισμού'
-                : '<span style="color:#c0392b">&#9679;</span> source column &nbsp;&nbsp; <span style="color:#2255c0">&#9679;</span> destination column';
-            graphCol.appendChild(caption);
+            table.appendChild(tr);
         }
+        gridCol.appendChild(table);
 
-        function clearPathLabels() {
-            Object.values(pathLabelEls).forEach(function (el) { el.textContent = ''; });
+        const ns = 'http://www.w3.org/2000/svg';
+        const spacing = Math.max(18, Math.min(32, 420 / n));
+        const height = n * spacing + 40;
+        const width = 280;
+        const leftX = 60, rightX = width - 60;
+        function edgePathD(K, M, curveOffset) {
+            const y1 = 20 + (K - 1) * spacing + spacing / 2;
+            const y2 = 20 + (M - 1) * spacing + spacing / 2;
+            const midX = (leftX + rightX) / 2;
+            const midY = (y1 + y2) / 2 + curveOffset;
+            return 'M ' + leftX + ' ' + y1 + ' Q ' + midX + ' ' + midY + ' ' + rightX + ' ' + y2;
         }
-        function setPathLabel(nodeKey, label) {
-            if (pathLabelEls[nodeKey]) pathLabelEls[nodeKey].textContent = label;
-        }
+        const svgEl = document.createElementNS(ns, 'svg');
+        svgEl.setAttribute('viewBox', '0 0 ' + width + ' ' + height);
+        svgEl.classList.add('routing-graph-svg');
+        const edgePathByPacketId = {};
+        packets.forEach(function (p) {
+            const path = document.createElementNS(ns, 'path');
+            path.setAttribute('d', edgePathD(p.sourceCol, p.destCol, p.curveOffset));
+            path.setAttribute('fill', 'none');
+            path.classList.add('rg-edge', 'uncolored');
+            path.style.cursor = 'pointer';
+            path.dataset.sourceCol = p.sourceCol;
+            path.dataset.packetId = p.id;
+            svgEl.appendChild(path);
+            edgePathByPacketId[p.id] = path;
+        });
+        const pathLabelEls = {};
+        const kCircleByCol = {};
+        for (let c = 1; c <= n; c++) {
+            const y = 20 + (c - 1) * spacing + spacing / 2;
+            const circleL = document.createElementNS(ns, 'circle');
+            circleL.setAttribute('cx', leftX); circleL.setAttribute('cy', y); circleL.setAttribute('r', 6);
+            circleL.setAttribute('fill', '#c0392b');
+            circleL.style.cursor = 'pointer';
+            svgEl.appendChild(circleL);
+            kCircleByCol[c] = circleL;
+            const labelL = document.createElementNS(ns, 'text');
+            labelL.setAttribute('x', leftX - 14); labelL.setAttribute('y', y + 4);
+            labelL.setAttribute('text-anchor', 'end'); labelL.classList.add('rg-node-label');
+            labelL.textContent = 'K' + c;
+            svgEl.appendChild(labelL);
+            const pathLabelL = document.createElementNS(ns, 'text');
+            pathLabelL.setAttribute('x', leftX - 14); pathLabelL.setAttribute('y', y - 6);
+            pathLabelL.setAttribute('text-anchor', 'end'); pathLabelL.classList.add('rg-path-label');
+            svgEl.appendChild(pathLabelL);
+            pathLabelEls['K' + c] = pathLabelL;
 
-        function highlightColumn(idx) {
-            document.querySelectorAll('.oa-table td').forEach(function (td) { td.classList.toggle('col-hover', parseInt(td.dataset.col) === idx); });
-            if (!svgEl) return;
-            svgEl.querySelectorAll('.rg-edge').forEach(function (edge) {
-                const match = parseInt(edge.dataset.sourceCol) === idx;
-                edge.classList.toggle('highlighted', match);
-                edge.classList.toggle('faded', !match);
+            const circleR = document.createElementNS(ns, 'circle');
+            circleR.setAttribute('cx', rightX); circleR.setAttribute('cy', y); circleR.setAttribute('r', 6);
+            circleR.setAttribute('fill', '#2255c0');
+            svgEl.appendChild(circleR);
+            const labelR = document.createElementNS(ns, 'text');
+            labelR.setAttribute('x', rightX + 14); labelR.setAttribute('y', y + 4);
+            labelR.classList.add('rg-node-label');
+            labelR.textContent = 'M' + c;
+            svgEl.appendChild(labelR);
+            const pathLabelR = document.createElementNS(ns, 'text');
+            pathLabelR.setAttribute('x', rightX + 14); pathLabelR.setAttribute('y', y - 6);
+            pathLabelR.classList.add('rg-path-label');
+            svgEl.appendChild(pathLabelR);
+            pathLabelEls['M' + c] = pathLabelR;
+        }
+        graphCol.appendChild(svgEl);
+
+        const footnote = document.createElement('div');
+        footnote.className = 'coloring-footnote';
+        footnote.innerHTML =
+            '<span lang="en">Hover over any packet / edge for details.</span>' +
+            '<span lang="gr">Κάνε hover σε οποιοδήποτε πακέτο / ακμή για πληροφορίες.</span>';
+        stack.appendChild(footnote);
+
+        let lastOverlay = {};
+        function highlightColumn(c) {
+            Object.keys(tdByPacketId).forEach(function (pid) {
+                tdByPacketId[pid].classList.toggle('col-hover', parseInt(tdByPacketId[pid].dataset.col) === c);
+            });
+            Object.keys(edgePathByPacketId).forEach(function (pid) {
+                const el = edgePathByPacketId[pid];
+                const match = parseInt(el.dataset.sourceCol) === c;
+                el.classList.toggle('highlighted', match);
+                el.classList.toggle('faded', !match);
             });
         }
         function highlightSingleEdge(packetId) {
-            document.querySelectorAll('.oa-table td').forEach(function (td) { td.classList.toggle('col-hover', parseInt(td.dataset.packetId) === packetId); });
-            if (!svgEl) return;
-            svgEl.querySelectorAll('.rg-edge').forEach(function (edge) {
-                const match = parseInt(edge.dataset.packetId) === packetId;
-                edge.classList.toggle('highlighted', match);
-                edge.classList.toggle('faded', !match);
+            Object.keys(tdByPacketId).forEach(function (pid) {
+                tdByPacketId[pid].classList.toggle('col-hover', parseInt(pid) === packetId);
+            });
+            Object.keys(edgePathByPacketId).forEach(function (pid) {
+                const el = edgePathByPacketId[pid];
+                const match = parseInt(pid) === packetId;
+                el.classList.toggle('highlighted', match);
+                el.classList.toggle('faded', !match);
             });
         }
         function clearHighlight() {
-            document.querySelectorAll('.oa-table td').forEach(function (td) { td.classList.remove('col-hover'); });
-            if (svgEl) svgEl.querySelectorAll('.rg-edge').forEach(function (edge) { edge.classList.remove('highlighted', 'faded'); });
+            Object.keys(tdByPacketId).forEach(function (pid) { tdByPacketId[pid].classList.remove('col-hover'); });
+            Object.keys(edgePathByPacketId).forEach(function (pid) { edgePathByPacketId[pid].classList.remove('highlighted', 'faded'); });
+        }
+        function packetTooltipHtml(p, r, c) {
+            const ov = lastOverlay[p.id];
+            const colorLine = typeof ov === 'number'
+                ? colorLabel(ov, colors)
+                : (ov === 'yellow-pending'
+                    ? (isGrLang() ? '<span style="color:#a07d00;">κίτρινο (προσωρινό)</span>' : '<span style="color:#a07d00;">yellow (tentative)</span>')
+                    : '<span style="color:#999;">—</span>');
+            return isGrLang()
+                ? ('Θέση [' + r + ',<span style="color:#c0392b;">' + c + '</span>]<br>' +
+                   'Προορισμός [' + p.destRow + ',<span style="color:#2255c0;">' + p.destCol + '</span>]<br>' +
+                   'Ακμή: K' + c + '-M' + p.destCol + '<br>Χρώμα: ' + colorLine)
+                : ('Position [' + r + ',<span style="color:#c0392b;">' + c + '</span>]<br>' +
+                   'Destination [' + p.destRow + ',<span style="color:#2255c0;">' + p.destCol + '</span>]<br>' +
+                   'Edge: K' + c + '-M' + p.destCol + '<br>Color: ' + colorLine);
         }
 
-        drawGrid();
-        drawGraph();
-
-        function appendMatchColorButton(colorNum) {
-            const nextLi = document.createElement('li');
-            nextLi.innerHTML = isGrLang()
-                ? ('Χρωματισμός με το ' + colorLabel(colorNum, colors) + '. Πάτησε το κουμπί για να ξεκινήσεις τη διαδικασία.')
-                : ('Coloring with ' + colorLabel(colorNum, colors) + '. Press the button to start the process.');
-            const matchBtn = document.createElement('button');
-            matchBtn.className = 'btn-primary';
-            matchBtn.style.marginTop = '8px';
-            matchBtn.innerHTML = isGrLang()
-                ? ('Ταίριασμα με ' + colorLabel(colorNum, colors))
-                : ('Match with ' + colorLabel(colorNum, colors));
-            nextLi.appendChild(document.createElement('br'));
-            nextLi.appendChild(matchBtn);
-            msList.appendChild(nextLi);
-            matchBtn.addEventListener('click', function () {
-                nextLi.classList.add('done');
-                matchBtn.remove();
-                startNextRound();
+        for (let c = 1; c <= n; c++) {
+            colHeaderEls[c].addEventListener('mouseenter', function () { highlightColumn(c); });
+            colHeaderEls[c].addEventListener('mouseleave', clearHighlight);
+            kCircleByCol[c].addEventListener('mouseenter', function () { highlightColumn(c); });
+            kCircleByCol[c].addEventListener('mouseleave', clearHighlight);
+        }
+        packets.forEach(function (p) {
+            const td = tdByPacketId[p.id];
+            td.addEventListener('mouseenter', function (e) {
+                highlightSingleEdge(p.id);
+                showTooltip(e.clientX, e.clientY, packetTooltipHtml(p, p.sourceRow, p.sourceCol));
             });
-            msList.scrollTop = msList.scrollHeight;
-        }
+            td.addEventListener('mousemove', function (e) { showTooltip(e.clientX, e.clientY, oaTooltipEl.innerHTML); });
+            td.addEventListener('mouseleave', function () { clearHighlight(); hideTooltip(); });
 
-        buildEdgesBtn.addEventListener('click', function () {
-            state.edgesBuilt = true;
-            skipAllBtn.style.display = 'inline-block';
-            buildEdgesLi.classList.add('done');
-            buildEdgesBtn.style.display = 'none';
-            drawGraph();
-            appendMatchColorButton(1);
+            const pathEl = edgePathByPacketId[p.id];
+            pathEl.addEventListener('mouseenter', function (e) {
+                highlightSingleEdge(p.id);
+                showTooltip(e.clientX, e.clientY, packetTooltipHtml(p, p.sourceRow, p.sourceCol));
+            });
+            pathEl.addEventListener('mousemove', function (e) { showTooltip(e.clientX, e.clientY, oaTooltipEl.innerHTML); });
+            pathEl.addEventListener('mouseleave', function () { clearHighlight(); hideTooltip(); });
         });
 
-        /* ── Build the flat, click-by-click display chunk list for one K's search ── */
-        function buildDisplayChunks(rawSteps, startK) {
-            const chunks = [{ type: 'select-K', K: startK, isNewSearch: true }];
-            rawSteps.forEach(function (ev) {
-                if (ev.type === 'try-gray') {
-                    chunks.push({ type: 'try-gray', edge: ev.edge });
-                } else if (ev.type === 'found-free') {
-                    chunks.push({ type: 'result-free', edge: ev.edge });
-                } else if (ev.type === 'follow-existing') {
-                    chunks.push({ type: 'result-follow', edge: ev.edge });
-                    chunks.push({ type: 'select-K', K: ev.edge.K, isNewSearch: false });
-                } else if (ev.type === 'backtrack') {
-                    chunks.push({ type: 'backtrack', edge: ev.edge });
-                }
-            });
-            return chunks;
-        }
-
-        function startNextRound() {
-            if (state.round >= n) return;
-            const color = state.round + 1;
-            const matchOfM = new Array(n + 1).fill(null);
-            let allChunks = [];
-            const roundPaths = []; // per-K final path, captured for correct replay
-
-            for (let K = 1; K <= n; K++) {
-                const rawSteps = [];
-                const path = [];
-                extendMatchingTraced(K, edgesByK, matchOfM, new Set(), color, path, rawSteps);
-                applyFlip(path, color, matchOfM);
-                roundPaths.push(path);
-                allChunks = allChunks.concat(buildDisplayChunks(rawSteps, K));
-            }
-            // reset all edges touched this round back to null; chunks will replay their color changes
-            roundPaths.forEach(function (path) { path.forEach(function (e) { e.color = null; e.walked = false; }); });
-
-            state.roundChunks = allChunks;
-            state.chunkIdx = 0;
-            state.roundColor = color;
-            state.sLabelCounter = 0;
-            state.dLabelCounter = 0;
-            state._roundPathsLookup = roundPaths;
-            clearPathLabels();
-
-            renderNextChunkControls();
-        }
-
-        function findEdgeEl(edge) {
-            return svgEl.querySelector('.rg-edge[data-packet-id="' + edge.packetId + '"]');
-        }
-        function refreshEdgeVisual(edge) {
-            const el = findEdgeEl(edge);
-            if (!el) return;
-            if (typeof edge.color === 'number') {
-                el.style.stroke = colors[edge.color - 1];
-                el.style.strokeWidth = edge.walked ? '3.5' : '2';
-                el.style.strokeDasharray = edge.walked ? '5,3' : '';
-                el.dataset.color = edge.color;
-            } else if (edge.color === 'yellow-pending') {
-                el.style.stroke = '#e0b400';
-                el.style.strokeWidth = '3.5';
-                el.style.strokeDasharray = '';
-                el.dataset.color = '';
-            } else {
-                el.style.stroke = '';
-                el.style.strokeWidth = '';
-                el.style.strokeDasharray = '';
-                el.classList.add('uncolored');
-                el.dataset.color = '';
-            }
-            const badge = gridCol.querySelector('td[data-packet-id="' + edge.packetId + '"] .packet-badge');
-            if (badge) {
-                if (typeof edge.color === 'number') {
+        function applyOverlayInPlace(overlay) {
+            packets.forEach(function (p) {
+                const ov = overlay[p.id];
+                const badge = badgeByPacketId[p.id];
+                const path = edgePathByPacketId[p.id];
+                if (typeof ov === 'number') {
                     badge.classList.add('colored');
-                    badge.style.borderColor = colors[edge.color - 1];
-                    badge.style.color = colors[edge.color - 1];
-                    badge.style.borderStyle = edge.walked ? 'dashed' : 'solid';
-                } else if (edge.color === 'yellow-pending') {
+                    badge.style.borderColor = colors[ov - 1];
+                    badge.style.color = colors[ov - 1];
+                    badge.style.borderWidth = '';
+                    badge.style.fontWeight = '';
+                    path.classList.remove('uncolored');
+                    path.style.stroke = colors[ov - 1];
+                    path.style.strokeWidth = '2';
+                } else if (ov === 'yellow-pending') {
+                    badge.classList.remove('colored');
                     badge.style.borderColor = '#e0b400';
                     badge.style.color = '#a07d00';
                     badge.style.borderWidth = '3px';
                     badge.style.fontWeight = '700';
+                    path.classList.remove('uncolored');
+                    path.style.stroke = '#e0b400';
+                    path.style.strokeWidth = '3.5';
                 } else {
                     badge.classList.remove('colored');
                     badge.style.borderColor = '';
                     badge.style.color = '';
                     badge.style.borderWidth = '';
                     badge.style.fontWeight = '';
-                    badge.style.borderStyle = '';
-                }
-            }
-        }
-
-        function renderNextChunkControls() {
-            const oldBtn = document.getElementById('nextChunkBtn');
-            if (oldBtn) oldBtn.remove();
-            const oldSkip = document.getElementById('skipChunkBtn');
-            if (oldSkip) oldSkip.remove();
-
-            const btn = document.createElement('button');
-            btn.id = 'nextChunkBtn';
-            btn.className = 'btn-primary';
-            btn.style.marginTop = '10px';
-            btn.style.marginRight = '8px';
-            btn.innerHTML = '<span lang="en">Next Step</span><span lang="gr">Επόμενο Βήμα</span>';
-            btn.addEventListener('click', advanceChunk);
-
-            const skipBtn = document.createElement('button');
-            skipBtn.id = 'skipChunkBtn';
-            skipBtn.className = 'btn-pale';
-            skipBtn.style.marginTop = '10px';
-            skipBtn.style.marginLeft = '4px';
-            skipBtn.innerHTML = '<span lang="en">Skip to end of this matching</span><span lang="gr">Παράλειψη έως το τέλος αυτού του matching</span>';
-            skipBtn.addEventListener('click', function () {
-                while (state.chunkIdx < state.roundChunks.length) advanceChunk();
-                const target = document.getElementById('nextChunkBtn') || msList.lastElementChild;
-                if (target && typeof target.scrollIntoView === 'function') {
-                    try { target.scrollIntoView({ block: 'center', behavior: 'smooth' }); } catch (e) { /* no-op */ }
+                    path.classList.add('uncolored');
+                    path.style.stroke = '';
+                    path.style.strokeWidth = '';
                 }
             });
-
-            msList.parentNode.insertBefore(btn, msList.nextSibling);
-            btn.insertAdjacentElement('afterend', skipBtn);
         }
 
-        function advanceChunk() {
-            const chunks = state.roundChunks;
-            if (state.chunkIdx >= chunks.length) return;
-            const ev = chunks[state.chunkIdx];
-            state.chunkIdx++;
-            const color = state.roundColor;
+        function goToIdx(newIdx) {
+            newIdx = Math.max(0, Math.min(state.masterSteps.length - 1, newIdx));
+            state.timelineIdx = newIdx;
+            refresh();
+        }
 
-            if (ev.type === 'select-K') {
-                if (ev.isNewSearch) {
-                    state.sLabelCounter = 0;
-                    state.dLabelCounter = 0;
-                    clearPathLabels();
-                }
-                const sLabel = 'S' + state.sLabelCounter;
-                state.sLabelCounter++;
-                setPathLabel('K' + ev.K, sLabel);
-                appendStep(ev.isNewSearch
-                    ? (isGrLang()
-                        ? ('Βρίσκουμε έναν Κόκκινο κόμβο που δεν έχει ' + colorLabel(color, colors) + ' ακμή. Επιλέξαμε τον <strong>K' + ev.K + '</strong> κόμβο (' + sLabel + ')')
-                        : ('We find a red node with no ' + colorLabel(color, colors) + ' edge. We selected node <strong>K' + ev.K + '</strong> (' + sLabel + ')'))
-                    : (isGrLang()
-                        ? ('Ο Κόκκινος κόμβος <strong>K' + ev.K + '</strong> (' + sLabel + ') πρέπει τώρα να βρει άλλη ακμή.')
-                        : ('Red node <strong>K' + ev.K + '</strong> (' + sLabel + ') must now find a different edge.')));
-            } else if (ev.type === 'try-gray') {
-                ev.edge.color = 'yellow-pending';
-                refreshEdgeVisual(ev.edge);
-                const dLabel = 'D' + state.dLabelCounter;
-                state.dLabelCounter++;
-                setPathLabel('M' + ev.edge.M, dLabel);
-                appendStep(isGrLang()
-                    ? ('Διαλέγουμε μια ελεύθερη/γκρι ακμή του προς Μπλε κόμβο. Επιλέξαμε την ακμή που δείχνει τον <strong>M' + ev.edge.M + '</strong> κόμβο (' + dLabel + '), την οποία χρωματίζουμε προσωρινά κίτρινη.')
-                    : ('We pick a free/gray edge towards a blue node. We selected the edge pointing to node <strong>M' + ev.edge.M + '</strong> (' + dLabel + '), which we temporarily color yellow.'));
-            } else if (ev.type === 'result-free') {
-                appendStep(isGrLang()
-                    ? ('Ελέγχουμε αν ο <strong>M' + ev.edge.M + '</strong> Μπλε κόμβος έχει ακμή με ' + colorLabel(color, colors) + '. <strong>Δεν έχει!</strong> Επιτυχές μονοπάτι. Χρωματίζουμε όλες τις κίτρινες ακμές σε ' + colorLabel(color, colors) + ' και όλες τις διακεκομμένες σε γκρι.')
-                    : ('We check whether node <strong>M' + ev.edge.M + '</strong> has a ' + colorLabel(color, colors) + ' edge. <strong>It does not!</strong> Successful path. We color all yellow edges ' + colorLabel(color, colors) + ' and all dashed edges gray.'), 'success');
-                // commit this K's path colors now (already computed final values -- replay them)
-                const path = findPathForEdge(ev.edge);
-                if (path) {
-                    path.forEach(function (e, i) {
-                        e.walked = false;
-                        e.color = (i % 2 === 0) ? color : null;
-                        refreshEdgeVisual(e);
-                    });
-                }
-                clearPathLabels();
-            } else if (ev.type === 'result-follow') {
-                ev.edge.walked = true;
-                refreshEdgeVisual(ev.edge);
-                appendStep(isGrLang()
-                    ? ('Ελέγχουμε αν ο <strong>M' + ev.edge.M + '</strong> Μπλε κόμβος έχει ακμή με ' + colorLabel(color, colors) + '. <strong>Έχει!</strong> Την ακμή <strong>K' + ev.edge.K + '-M' + ev.edge.M + '</strong>. Την ακολουθούμε πίσω στον Κόκκινο <strong>K' + ev.edge.K + '</strong> κόμβο.')
-                    : ('We check whether node <strong>M' + ev.edge.M + '</strong> has a ' + colorLabel(color, colors) + ' edge. <strong>It does!</strong> The edge <strong>K' + ev.edge.K + '-M' + ev.edge.M + '</strong>. We follow it back to red node <strong>K' + ev.edge.K + '</strong>.'), 'follow');
-            } else if (ev.type === 'backtrack') {
-                ev.edge.color = null;
-                ev.edge.walked = false;
-                refreshEdgeVisual(ev.edge);
-                appendStep(isGrLang() ? 'Αδιέξοδο — επιστρέφουμε.' : 'Dead end — backtracking.');
+        function renderBalls(idx) {
+            ballsInner.innerHTML = '';
+            function addBall(colorHex, isCurrent, onClick) {
+                const b = document.createElement('button');
+                b.type = 'button';
+                b.className = 'coloring-ball' + (isCurrent ? ' current' : '');
+                b.style.background = colorHex;
+                if (onClick) b.addEventListener('click', onClick);
+                ballsInner.appendChild(b);
             }
-
-            if (state.chunkIdx >= chunks.length) {
-                const btn = document.getElementById('nextChunkBtn');
-                if (btn) btn.remove();
-                const skipBtn = document.getElementById('skipChunkBtn');
-                if (skipBtn) skipBtn.remove();
-                finishRound();
+            addBall('#9aa5b5', idx === 0, function () { goToIdx(0); });
+            addBall('#9aa5b5', idx === 1, function () { goToIdx(1); });
+            state.roundRanges.forEach(function (range) {
+                if (idx < range.start) return;
+                const isCurrent = idx >= range.start && idx <= range.end;
+                addBall(colors[range.color - 1], isCurrent, function () { goToIdx(range.start); });
+            });
+            const finalIdx = state.masterSteps.length - 1;
+            if (idx >= finalIdx) {
+                addBall('#9aa5b5', idx === finalIdx, function () { goToIdx(finalIdx); });
             }
         }
 
-        function findPathForEdge(edge) {
-            // the path that this edge's found-free event concluded is simply
-            // reconstructable by walking dashed('walked') edges + this edge itself
-            // -- but we captured roundPaths already when computing; find the one containing this edge as its last element
-            for (const p of state._roundPathsLookup) {
-                if (p[p.length - 1] === edge) return p;
+        function currentRoundRange(idx) {
+            for (let i = 0; i < state.roundRanges.length; i++) {
+                const r = state.roundRanges[i];
+                if (idx >= r.start && idx <= r.end) return r;
             }
             return null;
         }
 
-        function finishRound() {
-            state.round++;
-            drawGrid();
-            if (state.skippingAll) return; // caller drives the loop, no intermediate UI
-            if (state.round >= n) {
-                revealRearrangeStage();
-            } else {
-                appendMatchColorButton(state.round + 1);
-            }
+        function refresh() {
+            const idx = state.timelineIdx;
+            const ev = state.masterSteps[idx];
+            const rep = computeColoringOverlay(idx);
+            lastOverlay = rep.overlay;
+            descBox.innerHTML = describeColoringStep(ev, rep.currentLabel);
+            applyOverlayInPlace(rep.overlay);
+            Object.keys(pathLabelEls).forEach(function (key) { pathLabelEls[key].textContent = rep.labels[key] || ''; });
+
+            svgEl.querySelectorAll('.rg-edge').forEach(function (p) { p.style.display = idx >= 1 ? '' : 'none'; });
+
+            renderBalls(idx);
+
+            prevBtn.disabled = idx <= 0;
+            const atEnd = idx >= state.masterSteps.length - 1;
+            nextBtn.disabled = atEnd;
+            skipAllBtn.style.display = atEnd ? 'none' : 'inline-block';
+
+            const cr = currentRoundRange(idx);
+            skipColorBtn.style.display = (cr && idx < cr.end) ? 'inline-block' : 'none';
+            if (cr) skipColorBtn.onclick = function () { goToIdx(cr.end); };
+
+            if (atEnd) api.complete();
         }
 
-        function skipAllRounds() {
-            // if a round is already mid-search, finish it first
-            if (state.roundChunks && state.chunkIdx < state.roundChunks.length) {
-                state.skippingAll = true;
-                while (state.chunkIdx < state.roundChunks.length) advanceChunk();
+        prevBtn.addEventListener('click', function () { goToIdx(state.timelineIdx - 1); });
+        nextBtn.addEventListener('click', function () { goToIdx(state.timelineIdx + 1); });
+        skipAllBtn.addEventListener('click', function () { goToIdx(state.masterSteps.length - 1); });
+
+        refresh();
+    }
+
+    const rearrangeActionCard = {
+        id: 'p1-rearrange', navLabel: '<span lang="en">Phase 1: Rearrangement</span><span lang="gr">Φάση 1: Αναδιάταξη</span>', kind: 'action', theory: hallTheory, interactive: true,
+        render: function (body, api) {
+            const desc = document.createElement('p');
+            desc.className = 'substep-explain';
+            desc.innerHTML =
+                '<span lang="en">With the coloring complete, we <span class="glossary-term" data-term="greedy">greedily</span> move the packets within each column: those with ' + colorWordFor('en', 1) + ' go to row 1, ' + colorWordFor('en', 2) + ' to row 2, and so on. Phase 1 finishes in at most &radic;N&minus;1 = ' + (n) + '&minus;1 = ' + (n - 1) + ' steps.</span>' +
+                '<span lang="gr">Με τον χρωματισμό έτοιμο, κάνουμε <span class="glossary-term" data-term="greedy">άπληστη</span> μετακίνηση των πακέτων ανά στήλη: αυτά με ' + colorWordFor('gr', 1) + ' στη γραμμή 1, ' + colorWordFor('gr', 2) + ' στη γραμμή 2 και ούτω καθ&rsquo; εξής. Η Φάση 1 ολοκληρώνεται μετά από το πολύ &radic;N&minus;1 = ' + (n) + '&minus;1 = ' + (n - 1) + ' βήματα.</span>';
+            body.appendChild(desc);
+
+            if (state.afterP1) {
+                appendActualSteps(desc, state.afterP1Steps || 0);
+                renderRearrangeResult(body, api);
+                api.complete();
+                return;
             }
-            state.skippingAll = true;
-            while (state.round < n) {
-                startNextRound();
-                while (state.chunkIdx < state.roundChunks.length) advanceChunk();
-            }
-            state.skippingAll = false;
-            // remove any leftover "match with color k" button/li left in the DOM
-            Array.from(msList.querySelectorAll('button.btn-primary')).forEach(function (btn) {
-                if (/Ταίριασμα|Match with/.test(btn.textContent)) {
-                    btn.parentElement.remove();
-                }
-            });
-            const oldNext = document.getElementById('nextChunkBtn');
-            if (oldNext) oldNext.remove();
-            const oldSkip = document.getElementById('skipChunkBtn');
-            if (oldSkip) oldSkip.remove();
-            revealRearrangeStage();
-        }
 
-        function revealRearrangeStage() {
-            skipAllBtn.style.display = 'none';
-
-            packets.forEach(function (p) { p.color = p.edgeRef.color; });
-
-            const li = document.createElement('li');
-            li.className = 'done';
-            li.innerHTML = isGrLang()
-                ? 'Τώρα αναδιατάσουμε ανά στήλη τα πακέτα ανάλογα με το χρώμα τους, ώστε κάθε γραμμή να έχει από ένα χρώμα.'
-                : 'We now rearrange within each column according to color, so that every row ends up with one color.';
-            const execBtn = document.createElement('button');
-            execBtn.className = 'btn-primary';
-            execBtn.style.marginTop = '8px';
-            execBtn.innerHTML = '<span lang="en">Rearrange by color</span><span lang="gr">Αναδιάταξη με βάση τα χρώματα</span>';
-            li.appendChild(document.createElement('br'));
-            li.appendChild(execBtn);
-            msList.appendChild(li);
-            msList.scrollTop = msList.scrollHeight;
-
-            const rearrangeLayout = document.createElement('div');
-            rearrangeLayout.className = 'matching-layout';
-            rearrangeLayout.style.marginTop = '14px';
-            stepBody.appendChild(rearrangeLayout);
-
-            const beforeCol = document.createElement('div');
-            const beforeLabel = document.createElement('div');
-            beforeLabel.style.fontWeight = '600';
-            beforeLabel.style.fontSize = '12.5px';
-            beforeLabel.style.color = '#1a2a4a';
-            beforeLabel.style.marginBottom = '6px';
-            beforeLabel.innerHTML = isGrLang() ? 'Πριν' : 'Before';
-            beforeCol.appendChild(beforeLabel);
-            const beforeGridDiv = document.createElement('div');
-            beforeCol.appendChild(beforeGridDiv);
-            rearrangeLayout.appendChild(beforeCol);
-
-            const afterCol = document.createElement('div');
-            const afterLabel = document.createElement('div');
-            afterLabel.style.fontWeight = '600';
-            afterLabel.style.fontSize = '12.5px';
-            afterLabel.style.color = '#1e7a3f';
-            afterLabel.style.marginBottom = '6px';
-            afterLabel.innerHTML = isGrLang() ? 'Μετά' : 'After';
-            afterCol.appendChild(afterLabel);
-            const afterGridDiv = document.createElement('div');
-            afterCol.appendChild(afterGridDiv);
-            rearrangeLayout.appendChild(afterCol);
-            afterCol.style.display = 'none';
-
+            const meshSlot = document.createElement('div');
+            meshSlot.style.marginTop = '12px';
+            body.appendChild(meshSlot);
             const beforePositions = {};
             packets.forEach(function (p) { beforePositions[p.sourceRow + ',' + p.sourceCol] = [p]; });
-            drawSimpleGrid(beforeGridDiv, beforePositions, colors, n, null);
+            drawSimpleGrid(meshSlot, beforePositions, colors, n, null);
 
-            const stepCounterHolder = document.createElement('div');
-            stepCounterHolder.className = 'substep-progress';
-            stepCounterHolder.style.marginTop = '10px';
-            stepBody.appendChild(stepCounterHolder);
-
-            const continueWrap = document.createElement('div');
-            continueWrap.style.marginTop = '20px';
-            continueWrap.style.textAlign = 'right';
-            const continueBtn = document.createElement('button');
-            continueBtn.className = 'btn-primary';
-            continueBtn.disabled = true;
-            continueBtn.innerHTML = '<span lang="en">Continue to Phase 2 &rarr;</span><span lang="gr">Συνέχεια στη Φάση 2 &rarr;</span>';
-            continueWrap.appendChild(continueBtn);
-            stepBody.appendChild(continueWrap);
+            const execBtn = document.createElement('button');
+            execBtn.className = 'btn-primary';
+            execBtn.style.marginTop = '12px';
+            execBtn.innerHTML = '<span lang="en">Rearrange by color</span><span lang="gr">Αναδιάταξη με βάση τα χρώματα</span>';
+            body.appendChild(execBtn);
 
             execBtn.addEventListener('click', function () {
-                execBtn.disabled = true;
-                graphCol.style.display = 'none';
-                gridCol.style.display = 'none';
-                layout.style.display = 'none';
-                afterCol.style.display = 'block';
                 const items = packets.map(function (p) { return { id: p.id, cur: p.sourceRow - 1, dest: p.color - 1, meta: p }; });
                 const byColumn = {};
-                items.forEach(function (it) {
-                    const col = it.meta.sourceCol;
-                    (byColumn[col] = byColumn[col] || []).push(it);
-                });
+                items.forEach(function (it) { (byColumn[it.meta.sourceCol] = byColumn[it.meta.sourceCol] || []).push(it); });
                 const perColumnResult = {};
                 let maxSteps = 0;
                 Object.keys(byColumn).forEach(function (col) {
@@ -868,371 +829,470 @@ function offlineAlgorithm() {
                     maxSteps = Math.max(maxSteps, res.steps);
                 });
                 state.afterP1Steps = maxSteps;
-
-                let currentStep = 0;
-                function renderStepGrid(stepIdx) {
-                    const positions = {};
-                    Object.keys(byColumn).forEach(function (col) {
-                        const res = perColumnResult[col];
-                        const snap = res.snapshots[Math.min(stepIdx, res.snapshots.length - 1)];
-                        snap.forEach(function (list, rowIdx) {
-                            const key = (rowIdx + 1) + ',' + col;
-                            positions[key] = (positions[key] || []).concat(list.map(function (p) { return p.meta; }));
-                        });
+                state._p1ByColumn = byColumn;
+                state._p1PerColumnResult = perColumnResult;
+                const finalPos = {};
+                Object.keys(byColumn).forEach(function (col) {
+                    const snap = perColumnResult[col].snapshots[perColumnResult[col].snapshots.length - 1];
+                    snap.forEach(function (list, rowIdx) {
+                        const key = (rowIdx + 1) + ',' + col;
+                        finalPos[key] = (finalPos[key] || []).concat(list.map(function (p) { return p.meta; }));
                     });
-                    return positions;
-                }
-
-                function rearrangeDirection(p, r, c) {
-                    if (p.color === r) return null;
-                    return p.color > r ? { arrow: '\u2193' } : { arrow: '\u2191' };
-                }
-
-                drawSimpleGrid(afterGridDiv, renderStepGrid(0), colors, n, { getDirection: rearrangeDirection });
-
-                const nextStepBtn = document.createElement('button');
-                nextStepBtn.className = 'btn-secondary';
-                nextStepBtn.style.marginTop = '10px';
-                nextStepBtn.innerHTML = '<span lang="en">Next step</span><span lang="gr">Επόμενο βήμα</span>';
-                afterCol.appendChild(nextStepBtn);
-
-                function updateCounter() {
-                    stepCounterHolder.textContent = (isGrLang() ? 'Βήματα = ' : 'Steps = ') + currentStep;
-                }
-                updateCounter();
-
-                nextStepBtn.addEventListener('click', function () {
-                    currentStep++;
-                    drawSimpleGrid(afterGridDiv, renderStepGrid(currentStep), colors, n, { getDirection: rearrangeDirection });
-                    afterCol.appendChild(nextStepBtn);
-                    updateCounter();
-                    if (currentStep >= maxSteps) {
-                        nextStepBtn.remove();
-                        state.afterP1 = renderStepGrid(currentStep);
-                        continueBtn.disabled = false;
-                        markSubTabDone(0);
-                        unlockSubTab(1);
-                    }
                 });
-            });
+                state.afterP1 = finalPos;
+                appendActualSteps(desc, maxSteps);
+                execBtn.style.display = 'none';
+                drawSimpleGrid(meshSlot, state.afterP1, colors, n, { getDirection: rearrangeDirection });
 
-            continueBtn.addEventListener('click', function () { renderPhase2(); });
+                const stepToggleBtn = document.createElement('button');
+                stepToggleBtn.className = 'btn-secondary';
+                stepToggleBtn.style.marginTop = '12px';
+                stepToggleBtn.innerHTML = '<span lang="en">Show step by step</span><span lang="gr">Δείξε βήμα-βήμα</span>';
+                body.appendChild(stepToggleBtn);
+
+                const navRow = buildStepNavRow(maxSteps, function (cur) {
+                    drawSimpleGrid(meshSlot, rearrangePositionsAtStep(cur), colors, n, { getDirection: rearrangeDirection });
+                });
+                navRow.style.display = 'none';
+                body.appendChild(navRow);
+
+                let shown = false;
+                stepToggleBtn.addEventListener('click', function () {
+                    shown = !shown;
+                    navRow.style.display = shown ? '' : 'none';
+                    stepToggleBtn.innerHTML = shown
+                        ? '<span lang="en">Hide step by step</span><span lang="gr">Κρύψε βήμα-βήμα</span>'
+                        : '<span lang="en">Show step by step</span><span lang="gr">Δείξε βήμα-βήμα</span>';
+                    if (shown) navRow._goTo(0);
+                    else drawSimpleGrid(meshSlot, state.afterP1, colors, n, { getDirection: rearrangeDirection });
+                });
+                api.complete();
+            });
         }
+    };
+    function rearrangeDirection(p, r) {
+        if (p.color === r) return null;
+        return p.color > r ? { arrow: '\u2193' } : { arrow: '\u2191' };
     }
 
-    /* ════════════════════════ PHASE 2 : Row routing ════════════════════════ */
-    function renderPhase2() {
-        activateSubTab(1);
-        stepBody.innerHTML = '';
-
-        const explain = document.createElement('div');
-        explain.className = 'substep-explain';
-        explain.innerHTML =
-            '<span lang="en"><strong>Goal of Phase 2:</strong> each packet will move within its row to reach its Destination column. Phase 1 guarantees that no packet in the same row shares a Destination column with any other, which in turn guarantees that no packet will ever be in conflict with another over the same edge, ensuring the absence of queues. Packets move "greedily", and the rearrangement is completed after at most &radic;N - 1 = ' + (n - 1) + ' steps.</span>' +
-            '<span lang="gr"><strong>Στόχος της Φάσης 2:</strong> Κάθε πακέτο θα μετακινηθεί μέσα στη γραμμή του για να φτάσει στην στήλη Προορισμού του. Η Φάση 1 μας εξασφαλίζει ότι κανένα πακέτο της ίδιας γραμμής δεν θα χει κοινή στήλη Προορισμού με κάποιο άλλο, κατ\' επέκταση μας εξασφαλίζει ότι κανένα πακέτο δεν θα βρεθεί σε κατάσταση σύγκρουσης με άλλο για την ίδια ακμή, εξασφαλίζοντας την έλλειψη ουρών. Τα πακέτα κινούνται "άπληστα" και η μετάθεση ολοκληρώνεται μετά από max &radic;N - 1 = ' + (n - 1) + ' βήματα.</span>';
-        stepBody.appendChild(explain);
-
-        const gridHolder = document.createElement('div');
-        stepBody.appendChild(gridHolder);
-
-        const stepCounterHolder = document.createElement('div');
-        stepCounterHolder.className = 'substep-progress';
-        stepBody.appendChild(stepCounterHolder);
-
-        const continueWrap = document.createElement('div');
-        continueWrap.style.marginTop = '20px';
-        continueWrap.style.textAlign = 'right';
-        const backBtn = document.createElement('button');
-        backBtn.className = 'btn-secondary';
-        backBtn.style.marginRight = '10px';
-        backBtn.innerHTML = '<span lang="en">&larr; Back</span><span lang="gr">&larr; Πίσω</span>';
-        const continueBtn = document.createElement('button');
-        continueBtn.className = 'btn-primary';
-        continueBtn.disabled = true;
-        continueBtn.innerHTML = '<span lang="en">Continue to Phase 3 &rarr;</span><span lang="gr">Συνέχεια στη Φάση 3 &rarr;</span>';
-        continueWrap.appendChild(backBtn);
-        continueWrap.appendChild(continueBtn);
-        stepBody.appendChild(continueWrap);
-
-        function hoverExtra(p, r, c) {
-            const dirText = p.destCol > c
-                ? (isGrLang() ? 'Μετακινείται δεξιά' : 'Moves right')
-                : p.destCol < c
-                    ? (isGrLang() ? 'Μετακινείται αριστερά' : 'Moves left')
-                    : (isGrLang() ? 'Έφτασε στη σωστή στήλη' : 'Reached correct column');
-            return isGrLang()
-                ? ('Πακέτο (' + r + ',' + c + ') &mdash; ' + colorLabel(p.color, colors) + '.<br>Στόχος: στήλη <strong>' + p.destCol + '</strong>.<br>' + dirText + '.')
-                : ('Packet (' + r + ',' + c + ') &mdash; ' + colorLabel(p.color, colors) + '.<br>Target: column <strong>' + p.destCol + '</strong>.<br>' + dirText + '.');
-        }
-        function direction(p, r, c) {
-            if (p.destCol === c) return null;
-            return p.destCol > c ? { arrow: '\u2192' } : { arrow: '\u2190' };
-        }
-
-        const items = packets.map(function (p) { return { id: p.id, cur: p.sourceCol - 1, dest: p.destCol - 1, meta: p }; });
-        const byRow = {};
-        items.forEach(function (it) { (byRow[it.meta.color] = byRow[it.meta.color] || []).push(it); });
-        const perRowResult = {};
-        let maxSteps = 0;
-        Object.keys(byRow).forEach(function (row) {
-            const res = simulateGreedyLine(byRow[row]);
-            perRowResult[row] = res;
-            maxSteps = Math.max(maxSteps, res.steps);
-        });
-
-        function positionsAtStep(stepIdx) {
-            const positions = {};
-            Object.keys(byRow).forEach(function (row) {
-                const res = perRowResult[row];
-                const snap = res.snapshots[Math.min(stepIdx, res.snapshots.length - 1)];
-                snap.forEach(function (list, colIdx) {
-                    const key = row + ',' + (colIdx + 1);
-                    positions[key] = (positions[key] || []).concat(list.map(function (p) { return p.meta; }));
-                });
+    function rearrangePositionsAtStep(stepIdx) {
+        const byColumn = state._p1ByColumn, perColumnResult = state._p1PerColumnResult;
+        const positions = {};
+        Object.keys(byColumn).forEach(function (col) {
+            const res = perColumnResult[col];
+            const snap = res.snapshots[Math.min(stepIdx, res.snapshots.length - 1)];
+            snap.forEach(function (list, rowIdx) {
+                const key = (rowIdx + 1) + ',' + col;
+                positions[key] = (positions[key] || []).concat(list.map(function (p) { return p.meta; }));
             });
-            return positions;
+        });
+        return positions;
+    }
+
+    function renderRearrangeResult(body) {
+
+        const maxSteps = state.afterP1Steps || 0;
+        const meshSlot = document.createElement('div');
+        meshSlot.style.marginTop = '14px';
+        body.appendChild(meshSlot);
+
+        const stepToggleBtn = document.createElement('button');
+        stepToggleBtn.className = 'btn-secondary';
+        stepToggleBtn.style.marginTop = '12px';
+        stepToggleBtn.innerHTML = '<span lang="en">Show step by step</span><span lang="gr">Δείξε βήμα-βήμα</span>';
+        body.appendChild(stepToggleBtn);
+
+        const navRow = buildStepNavRow(maxSteps, function (cur) {
+            drawSimpleGrid(meshSlot, rearrangePositionsAtStep(cur), colors, n, { getDirection: rearrangeDirection });
+        });
+        navRow.style.display = 'none';
+        body.appendChild(navRow);
+
+        drawSimpleGrid(meshSlot, state.afterP1, colors, n, { getDirection: rearrangeDirection });
+
+        let stepByStepShown = false;
+        stepToggleBtn.addEventListener('click', function () {
+            stepByStepShown = !stepByStepShown;
+            navRow.style.display = stepByStepShown ? '' : 'none';
+            stepToggleBtn.innerHTML = stepByStepShown
+                ? '<span lang="en">Hide step by step</span><span lang="gr">Κρύψε βήμα-βήμα</span>'
+                : '<span lang="en">Show step by step</span><span lang="gr">Δείξε βήμα-βήμα</span>';
+            if (stepByStepShown) {
+                navRow._goTo(0);
+            } else {
+                drawSimpleGrid(meshSlot, state.afterP1, colors, n, { getDirection: rearrangeDirection });
+            }
+        });
+    }
+
+    function buildStepNavRow(max, onStep) {
+        let cur = 0;
+        const row = document.createElement('div');
+        row.className = 'coloring-ball-row';
+        row.style.marginTop = '10px';
+
+        const prevBtn = document.createElement('button');
+        prevBtn.className = 'btn-secondary coloring-nav-btn';
+        prevBtn.innerHTML = '&larr;';
+
+        const stepLabel = document.createElement('div');
+        stepLabel.className = 'step-nav-label';
+
+        const dotsWrap = document.createElement('div');
+        dotsWrap.className = 'coloring-balls-inner';
+
+        const nextBtn = document.createElement('button');
+        nextBtn.className = 'btn-primary coloring-nav-btn';
+        nextBtn.innerHTML = '&rarr;';
+
+        row.appendChild(prevBtn);
+        row.appendChild(stepLabel);
+        row.appendChild(dotsWrap);
+        row.appendChild(nextBtn);
+
+        function renderLabel() {
+            stepLabel.innerHTML = (cur === 0)
+                ? '<span lang="en">Initial</span><span lang="gr">Αρχικό</span>'
+                : ('<span lang="en">Step ' + cur + '</span><span lang="gr">Βήμα ' + cur + '</span>');
         }
 
-        let currentStep = 0;
-        drawSimpleGrid(gridHolder, positionsAtStep(0), colors, n, { onHover: hoverExtra, getDirection: direction });
-
-        const stepBtnRow = document.createElement('div');
-        stepBtnRow.style.display = 'flex';
-        stepBtnRow.style.gap = '8px';
-        stepBtnRow.style.marginTop = '10px';
-        const prevStepBtn = document.createElement('button');
-        prevStepBtn.className = 'btn-secondary';
-        prevStepBtn.disabled = true;
-        prevStepBtn.innerHTML = '<span lang="en">&larr; Previous step</span><span lang="gr">&larr; Προηγούμενο βήμα</span>';
-        const nextStepBtn = document.createElement('button');
-        nextStepBtn.className = 'btn-secondary';
-        nextStepBtn.innerHTML = '<span lang="en">Next step</span><span lang="gr">Επόμενο βήμα</span>';
-        stepBtnRow.appendChild(prevStepBtn);
-        stepBtnRow.appendChild(nextStepBtn);
-        gridHolder.appendChild(stepBtnRow);
-
-        function updateCounter() { stepCounterHolder.textContent = (isGrLang() ? 'Βήματα = ' : 'Steps = ') + currentStep; }
-        function refreshStepButtons() {
-            prevStepBtn.disabled = currentStep <= 0;
-            nextStepBtn.disabled = currentStep >= maxSteps;
-        }
-        updateCounter();
-        refreshStepButtons();
-
-        function goToStep(target) {
-            currentStep = Math.max(0, Math.min(maxSteps, target));
-            drawSimpleGrid(gridHolder, positionsAtStep(currentStep), colors, n, { onHover: hoverExtra, getDirection: direction });
-            gridHolder.appendChild(stepBtnRow);
-            updateCounter();
-            refreshStepButtons();
-            if (currentStep >= maxSteps) {
-                state.afterP2 = positionsAtStep(currentStep);
-                state.afterP2Steps = maxSteps;
-                continueBtn.disabled = false;
-                markSubTabDone(1);
-                unlockSubTab(2);
+        function renderDots() {
+            dotsWrap.innerHTML = '';
+            for (let i = 0; i <= max; i++) {
+                const dot = document.createElement('button');
+                dot.type = 'button';
+                dot.className = 'coloring-ball' + (i === cur ? ' current' : '');
+                dot.style.background = i === cur ? '#1a6bbd' : '#cdd5e0';
+                (function(step) {
+                    dot.addEventListener('click', function () { goTo(step); });
+                })(i);
+                dotsWrap.appendChild(dot);
             }
         }
 
-        nextStepBtn.addEventListener('click', function () { goToStep(currentStep + 1); });
-        prevStepBtn.addEventListener('click', function () { goToStep(currentStep - 1); });
-
-        backBtn.addEventListener('click', function () { renderPhase1(); });
-        continueBtn.addEventListener('click', function () { renderPhase3(); });
+        function goTo(n) {
+            cur = Math.max(0, Math.min(max, n));
+            renderLabel();
+            renderDots();
+            prevBtn.disabled = cur <= 0;
+            nextBtn.disabled = cur >= max;
+            onStep(cur);
+        }
+        prevBtn.addEventListener('click', function () { goTo(cur - 1); });
+        nextBtn.addEventListener('click', function () { goTo(cur + 1); });
+        row._goTo = goTo;
+        return row;
     }
 
-    /* ════════════════════════ PHASE 3 : Column routing (final) ════════════════════════ */
-    function renderPhase3() {
-        activateSubTab(2);
-        stepBody.innerHTML = '';
+    const phase2Theory =
+        '<span lang="en">The Phase 1 rearrangement guarantees that no row contains two <span class="glossary-term" data-term="packet">packets</span> destined for the same column — so a <span class="glossary-term" data-term="greedy">greedy</span> algorithm can route each row independently in at most &radic;N&minus;1 <span class="glossary-term" data-term="step">steps</span>, with no conflicts.<br><br>' +
+        'All rows run their <span class="glossary-term" data-term="greedy">greedy</span> routines in parallel. Phase 2 ends when every packet is in its destination column.</span>' +
+        '<span lang="gr">Η αναδιάταξη της Φάσης 1 εξασφαλίζει ότι καμία γραμμή δεν περιέχει δύο <span class="glossary-term" data-term="packet">πακέτα</span> με τον ίδιο στόχο στήλης — άρα ένας <span class="glossary-term" data-term="greedy">άπληστος</span> αλγόριθμος μπορεί να δρομολογήσει κάθε γραμμή ανεξάρτητα σε το πολύ &radic;N&minus;1 <span class="glossary-term" data-term="step">βήματα</span>, χωρίς συγκρούσεις.<br><br>' +
+        'Όλες οι γραμμές τρέχουν τους <span class="glossary-term" data-term="greedy">άπληστους</span> αλγορίθμους τους παράλληλα. Η Φάση 2 τελειώνει όταν κάθε πακέτο βρεθεί στη στήλη προορισμού του.</span>';
 
-        const explain = document.createElement('div');
-        explain.className = 'substep-explain';
-        explain.innerHTML =
-            '<span lang="en"><strong>Goal of Phase 3:</strong> each packet will move within its column to reach its Destination row (final destination). Phase 2 guarantees that no packet in the same column shares a Destination row with any other, which in turn guarantees that no packet will ever be in conflict with another over the same edge, ensuring the absence of queues. Packets move "greedily", and the rearrangement is completed after at most &radic;N - 1 = ' + (n - 1) + ' steps.</span>' +
-            '<span lang="gr"><strong>Στόχος της Φάσης 3:</strong> Κάθε πακέτο θα μετακινηθεί μέσα στη στήλη του για να φτάσει στη γραμμή Προορισμού του (τελικός προορισμός). Η Φάση 2 μας εξασφαλίζει ότι κανένα πακέτο της ίδιας στήλης δεν θα χει κοινή γραμμή Προορισμού με κάποιο άλλο, κατ\' επέκταση μας εξασφαλίζει ότι κανένα πακέτο δεν θα βρεθεί σε κατάσταση σύγκρουσης με άλλο για την ίδια ακμή, εξασφαλίζοντας την έλλειψη ουρών. Τα πακέτα κινούνται "άπληστα" και η μετάθεση ολοκληρώνεται μετά από max &radic;N - 1 = ' + (n - 1) + ' βήματα.</span>';
-        stepBody.appendChild(explain);
+    const phase2ActionCard = {
+        id: 'p2-action', navLabel: '<span lang="en">Phase 2</span><span lang="gr">Φάση 2</span>', kind: 'action', theory: phase2Theory, interactive: true,
+        render: function (body, api) {
+            const desc = document.createElement('p');
+            desc.className = 'substep-explain';
+            desc.innerHTML =
+                '<span lang="en">In Phase 2 we <span class="glossary-term" data-term="greedy">greedily</span> route every packet within its row to its destination column. Phase 2 completes in at most &radic;N&minus;1 = ' + (n) + '&minus;1 = ' + (n - 1) + ' steps.</span>' +
+                '<span lang="gr">Στη Φάση 2 κάνουμε <span class="glossary-term" data-term="greedy">άπληστη</span> δρομολόγηση σε κάθε γραμμή, ώστε το κάθε πακέτο να πάει στη στήλη προορισμού του. Η Φάση 2 ολοκληρώνεται μετά από το πολύ &radic;N&minus;1 = ' + (n) + '&minus;1 = ' + (n - 1) + ' βήματα.</span>';
+            body.appendChild(desc);
 
-        const p3Layout = document.createElement('div');
-        p3Layout.className = 'matching-layout';
-        stepBody.appendChild(p3Layout);
+            function hoverExtra(p, r, c) {
+                const dirText = p.destCol > c ? (isGrLang() ? 'Μετακινείται δεξιά' : 'Moves right')
+                    : p.destCol < c ? (isGrLang() ? 'Μετακινείται αριστερά' : 'Moves left')
+                    : (isGrLang() ? 'Έφτασε στη σωστή στήλη' : 'Reached correct column');
+                return isGrLang()
+                    ? ('Πακέτο (' + r + ',' + c + ') &mdash; ' + colorLabel(p.color, colors) + '.<br>Στόχος: στήλη <strong>' + p.destCol + '</strong>.<br>' + dirText + '.')
+                    : ('Packet (' + r + ',' + c + ') &mdash; ' + colorLabel(p.color, colors) + '.<br>Target: column <strong>' + p.destCol + '</strong>.<br>' + dirText + '.');
+            }
+            function direction(p, r, c) {
+                if (p.destCol === c) return null;
+                return p.destCol > c ? { arrow: '\u2192' } : { arrow: '\u2190' };
+            }
 
-        const gridHolder = document.createElement('div');
-        p3Layout.appendChild(gridHolder);
+            const items = packets.map(function (p) { return { id: p.id, cur: p.sourceCol - 1, dest: p.destCol - 1, meta: p }; });
+            const byRow = {};
+            items.forEach(function (it) { (byRow[it.meta.color] = byRow[it.meta.color] || []).push(it); });
+            const perRowResult = {};
+            let maxSteps = 0;
+            Object.keys(byRow).forEach(function (row) {
+                const res = simulateGreedyLine(byRow[row]);
+                perRowResult[row] = res;
+                maxSteps = Math.max(maxSteps, res.steps);
+            });
+            function positionsAtStep(stepIdx) {
+                const positions = {};
+                Object.keys(byRow).forEach(function (row) {
+                    const res = perRowResult[row];
+                    const snap = res.snapshots[Math.min(stepIdx, res.snapshots.length - 1)];
+                    snap.forEach(function (list, colIdx) {
+                        const key = row + ',' + (colIdx + 1);
+                        positions[key] = (positions[key] || []).concat(list.map(function (p) { return p.meta; }));
+                    });
+                });
+                return positions;
+            }
+            state.afterP2 = positionsAtStep(maxSteps);
+            state.afterP2Steps = maxSteps;
 
-        const originalGridCol = document.createElement('div');
-        originalGridCol.style.display = 'none';
-        const originalGridLabel = document.createElement('div');
-        originalGridLabel.style.fontWeight = '600';
-        originalGridLabel.style.fontSize = '12.5px';
-        originalGridLabel.style.color = '#1a2a4a';
-        originalGridLabel.style.marginBottom = '6px';
-        originalGridLabel.innerHTML = isGrLang() ? 'Αρχικό Πλέγμα' : 'Original Grid';
-        originalGridCol.appendChild(originalGridLabel);
-        const originalGridDiv = document.createElement('div');
-        originalGridCol.appendChild(originalGridDiv);
-        p3Layout.appendChild(originalGridCol);
+            const meshSlot = document.createElement('div');
+            meshSlot.style.marginTop = '12px';
+            body.appendChild(meshSlot);
+            drawSimpleGrid(meshSlot, positionsAtStep(0), colors, n, { onHover: hoverExtra, getDirection: direction });
 
-        const stepCounterHolder = document.createElement('div');
-        stepCounterHolder.className = 'substep-progress';
-        stepBody.appendChild(stepCounterHolder);
+            const execBtn = document.createElement('button');
+            execBtn.className = 'btn-primary';
+            execBtn.style.marginTop = '12px';
+            execBtn.innerHTML = '<span lang="en">Execute Phase 2</span><span lang="gr">Εκτέλεση Φάσης 2</span>';
+            body.appendChild(execBtn);
 
-        const resultHolder = document.createElement('div');
-        stepBody.appendChild(resultHolder);
+            execBtn.addEventListener('click', function () {
+                appendActualSteps(desc, maxSteps);
+                execBtn.style.display = 'none';
+                drawSimpleGrid(meshSlot, positionsAtStep(maxSteps), colors, n, { onHover: hoverExtra, getDirection: direction });
 
-        const backWrap = document.createElement('div');
-        backWrap.style.marginTop = '20px';
-        const backBtn = document.createElement('button');
-        backBtn.className = 'btn-secondary';
-        backBtn.innerHTML = '<span lang="en">&larr; Back</span><span lang="gr">&larr; Πίσω</span>';
-        backWrap.appendChild(backBtn);
-        stepBody.appendChild(backWrap);
+                const stepToggleBtn = document.createElement('button');
+                stepToggleBtn.className = 'btn-secondary';
+                stepToggleBtn.style.marginTop = '12px';
+                stepToggleBtn.innerHTML = '<span lang="en">Show step by step</span><span lang="gr">Δείξε βήμα-βήμα</span>';
+                body.appendChild(stepToggleBtn);
 
-        function hoverExtra(p, r, c) {
-            const dirText = p.destRow > r
-                ? (isGrLang() ? 'Μετακινείται κάτω' : 'Moves down')
-                : p.destRow < r
-                    ? (isGrLang() ? 'Μετακινείται πάνω' : 'Moves up')
+                const navRow = buildStepNavRow(maxSteps, function (cur) {
+                    drawSimpleGrid(meshSlot, positionsAtStep(cur), colors, n, { onHover: hoverExtra, getDirection: direction });
+                });
+                navRow.style.display = 'none';
+                body.appendChild(navRow);
+
+                let shown = false;
+                stepToggleBtn.addEventListener('click', function () {
+                    shown = !shown;
+                    navRow.style.display = shown ? '' : 'none';
+                    stepToggleBtn.innerHTML = shown
+                        ? '<span lang="en">Hide step by step</span><span lang="gr">Κρύψε βήμα-βήμα</span>'
+                        : '<span lang="en">Show step by step</span><span lang="gr">Δείξε βήμα-βήμα</span>';
+                    if (shown) navRow._goTo(0);
+                    else drawSimpleGrid(meshSlot, positionsAtStep(maxSteps), colors, n, { onHover: hoverExtra, getDirection: direction });
+                });
+                api.complete();
+            });
+        }
+    };
+
+    const phase3Theory =
+        '<span lang="en">After Phase 2 every <span class="glossary-term" data-term="packet">packet</span> is in the correct column and needs only to reach its destination row. A <span class="glossary-term" data-term="greedy">greedy</span> algorithm can route each column independently in at most &radic;N&minus;1 <span class="glossary-term" data-term="step">steps</span>, with no conflicts.<br><br>' +
+        'All columns run their <span class="glossary-term" data-term="greedy">greedy</span> routines in parallel. Phase 3 ends when every packet reaches its final destination.</span>' +
+        '<span lang="gr">Μετά τη Φάση 2 κάθε <span class="glossary-term" data-term="packet">πακέτο</span> βρίσκεται στη σωστή στήλη και χρειάζεται μόνο να φτάσει στη γραμμή προορισμού του. Ένας <span class="glossary-term" data-term="greedy">άπληστος</span> αλγόριθμος μπορεί να δρομολογήσει κάθε στήλη ανεξάρτητα σε το πολύ &radic;N&minus;1 <span class="glossary-term" data-term="step">βήματα</span>, χωρίς συγκρούσεις.<br><br>' +
+        'Όλες οι στήλες τρέχουν τους <span class="glossary-term" data-term="greedy">άπληστους</span> αλγορίθμους τους παράλληλα. Η Φάση 3 τελειώνει όταν κάθε πακέτο φτάσει στον τελικό προορισμό του.</span>';
+
+    let phase3MaxSteps = 0;
+
+    const phase3ActionCard = {
+        id: 'p3-action', navLabel: '<span lang="en">Phase 3</span><span lang="gr">Φάση 3</span>', kind: 'action', theory: phase3Theory, interactive: true,
+        render: function (body, api) {
+            const desc = document.createElement('p');
+            desc.className = 'substep-explain';
+            desc.innerHTML =
+                '<span lang="en">In Phase 3 we <span class="glossary-term" data-term="greedy">greedily</span> route every packet within its column to its destination row — its final destination. Phase 3 completes in at most &radic;N&minus;1 = ' + (n) + '&minus;1 = ' + (n - 1) + ' steps.</span>' +
+                '<span lang="gr">Στη Φάση 3 κάνουμε <span class="glossary-term" data-term="greedy">άπληστη</span> δρομολόγηση σε κάθε στήλη, ώστε το κάθε πακέτο να πάει στη γραμμή προορισμού του, που πλέον είναι και ο τελικός προορισμός του. Η Φάση 3 ολοκληρώνεται μετά από το πολύ &radic;N&minus;1 = ' + (n) + '&minus;1 = ' + (n - 1) + ' βήματα.</span>';
+            body.appendChild(desc);
+
+            function hoverExtra(p, r, c) {
+                const dirText = p.destRow > r ? (isGrLang() ? 'Μετακινείται κάτω' : 'Moves down')
+                    : p.destRow < r ? (isGrLang() ? 'Μετακινείται πάνω' : 'Moves up')
                     : (isGrLang() ? 'Έφτασε στον τελικό προορισμό' : 'Reached final destination');
-            return isGrLang()
-                ? ('Πακέτο στη θέση (' + r + ',' + c + ').<br>Τελικός προορισμός: γραμμή <strong>' + p.destRow + '</strong>.<br>' + dirText + '.')
-                : ('Packet at (' + r + ',' + c + ').<br>Final destination: row <strong>' + p.destRow + '</strong>.<br>' + dirText + '.');
-        }
-        function direction(p, r, c) {
-            if (p.destRow === r) return null;
-            return p.destRow > r ? { arrow: '\u2193' } : { arrow: '\u2191' };
-        }
+                return isGrLang()
+                    ? ('Πακέτο στη θέση (' + r + ',' + c + ').<br>Τελικός προορισμός: γραμμή <strong>' + p.destRow + '</strong>.<br>' + dirText + '.')
+                    : ('Packet at (' + r + ',' + c + ').<br>Final destination: row <strong>' + p.destRow + '</strong>.<br>' + dirText + '.');
+            }
+            function direction(p, r, c) {
+                if (p.destRow === r) return null;
+                return p.destRow > r ? { arrow: '\u2193' } : { arrow: '\u2191' };
+            }
 
-        // build packetId -> {row, col} lookup from state.afterP2 (array-based positions)
-        const packetLocation = {};
-        Object.keys(state.afterP2).forEach(function (key) {
-            const parts = key.split(',');
-            const row = parseInt(parts[0]), col = parseInt(parts[1]);
-            state.afterP2[key].forEach(function (p) { packetLocation[p.id] = { row: row, col: col }; });
-        });
-
-        const items = packets.map(function (p) {
-            const loc = packetLocation[p.id];
-            return { id: p.id, cur: loc.row - 1, dest: p.destRow - 1, meta: p, col: loc.col };
-        });
-        const byCol = {};
-        items.forEach(function (it) { (byCol[it.col] = byCol[it.col] || []).push(it); });
-        const perColResult = {};
-        let maxSteps = 0;
-        Object.keys(byCol).forEach(function (col) {
-            const res = simulateGreedyLine(byCol[col]);
-            perColResult[col] = res;
-            maxSteps = Math.max(maxSteps, res.steps);
-        });
-
-        function positionsAtStep(stepIdx) {
-            const positions = {};
-            Object.keys(byCol).forEach(function (col) {
-                const res = perColResult[col];
-                const snap = res.snapshots[Math.min(stepIdx, res.snapshots.length - 1)];
-                snap.forEach(function (list, rowIdx) {
-                    const key = (rowIdx + 1) + ',' + col;
-                    positions[key] = (positions[key] || []).concat(list.map(function (p) { return p.meta; }));
+            const packetLocation = {};
+            Object.keys(state.afterP2).forEach(function (key) {
+                const parts = key.split(',');
+                state.afterP2[key].forEach(function (p) {
+                    packetLocation[p.id] = { row: parseInt(parts[0]), col: parseInt(parts[1]) };
                 });
             });
-            return positions;
-        }
+            const items = packets.map(function (p) {
+                const loc = packetLocation[p.id];
+                return { id: p.id, cur: loc.row - 1, dest: p.destRow - 1, meta: p, col: loc.col };
+            });
+            const byCol = {};
+            items.forEach(function (it) { (byCol[it.col] = byCol[it.col] || []).push(it); });
+            const perColResult = {};
+            let maxSteps = 0;
+            Object.keys(byCol).forEach(function (col) {
+                const res = simulateGreedyLine(byCol[col]);
+                perColResult[col] = res;
+                maxSteps = Math.max(maxSteps, res.steps);
+            });
+            phase3MaxSteps = maxSteps;
 
-        let currentStep = 0;
-        drawSimpleGrid(gridHolder, positionsAtStep(0), colors, n, { onHover: hoverExtra, getDirection: direction });
+            function positionsAtStep(stepIdx) {
+                const positions = {};
+                Object.keys(byCol).forEach(function (col) {
+                    const res = perColResult[col];
+                    const snap = res.snapshots[Math.min(stepIdx, res.snapshots.length - 1)];
+                    snap.forEach(function (list, rowIdx) {
+                        const key = (rowIdx + 1) + ',' + col;
+                        positions[key] = (positions[key] || []).concat(list.map(function (p) { return p.meta; }));
+                    });
+                });
+                return positions;
+            }
 
-        const stepBtnRow = document.createElement('div');
-        stepBtnRow.style.display = 'flex';
-        stepBtnRow.style.gap = '8px';
-        stepBtnRow.style.marginTop = '10px';
-        const prevStepBtn = document.createElement('button');
-        prevStepBtn.className = 'btn-secondary';
-        prevStepBtn.disabled = true;
-        prevStepBtn.innerHTML = '<span lang="en">&larr; Previous step</span><span lang="gr">&larr; Προηγούμενο βήμα</span>';
-        const nextStepBtn = document.createElement('button');
-        nextStepBtn.className = 'btn-secondary';
-        nextStepBtn.innerHTML = '<span lang="en">Next step</span><span lang="gr">Επόμενο βήμα</span>';
-        stepBtnRow.appendChild(prevStepBtn);
-        stepBtnRow.appendChild(nextStepBtn);
-        gridHolder.appendChild(stepBtnRow);
+            const meshSlot = document.createElement('div');
+            meshSlot.style.marginTop = '12px';
+            body.appendChild(meshSlot);
+            drawSimpleGrid(meshSlot, positionsAtStep(0), colors, n, { onHover: hoverExtra, getDirection: direction });
 
-        function updateCounter() { stepCounterHolder.textContent = (isGrLang() ? 'Βήματα = ' : 'Steps = ') + currentStep; }
-        function refreshStepButtons() {
-            prevStepBtn.disabled = currentStep <= 0;
-            nextStepBtn.disabled = currentStep >= maxSteps;
-        }
-        updateCounter();
-        refreshStepButtons();
+            const execBtn = document.createElement('button');
+            execBtn.className = 'btn-primary';
+            execBtn.style.marginTop = '12px';
+            execBtn.innerHTML = '<span lang="en">Execute Phase 3</span><span lang="gr">Εκτέλεση Φάσης 3</span>';
+            body.appendChild(execBtn);
 
-        let bannerShown = false;
-        function goToStep(target) {
-            currentStep = Math.max(0, Math.min(maxSteps, target));
-            drawSimpleGrid(gridHolder, positionsAtStep(currentStep), colors, n, { onHover: hoverExtra, getDirection: direction });
-            gridHolder.appendChild(stepBtnRow);
-            updateCounter();
-            refreshStepButtons();
-            if (currentStep >= maxSteps && !bannerShown) {
-                bannerShown = true;
-                markSubTabDone(2);
+            execBtn.addEventListener('click', function () {
+                appendActualSteps(desc, maxSteps);
+                execBtn.style.display = 'none';
+                state.afterP3 = positionsAtStep(maxSteps);
+                drawSimpleGrid(meshSlot, state.afterP3, colors, n, { onHover: hoverExtra, getDirection: direction });
 
-                const originalPositions = {};
-                packets.forEach(function (p) { originalPositions[p.sourceRow + ',' + p.sourceCol] = [p]; });
-                drawSimpleGrid(originalGridDiv, originalPositions, colors, n, null);
-                originalGridCol.style.display = 'block';
+                const stepToggleBtn = document.createElement('button');
+                stepToggleBtn.className = 'btn-secondary';
+                stepToggleBtn.style.marginTop = '12px';
+                stepToggleBtn.innerHTML = '<span lang="en">Show step by step</span><span lang="gr">Δείξε βήμα-βήμα</span>';
+                body.appendChild(stepToggleBtn);
+
+                const navRow = buildStepNavRow(maxSteps, function (cur) {
+                    drawSimpleGrid(meshSlot, positionsAtStep(cur), colors, n, { onHover: hoverExtra, getDirection: direction });
+                });
+                navRow.style.display = 'none';
+                body.appendChild(navRow);
+
+                let shown = false;
+                stepToggleBtn.addEventListener('click', function () {
+                    shown = !shown;
+                    navRow.style.display = shown ? '' : 'none';
+                    stepToggleBtn.innerHTML = shown
+                        ? '<span lang="en">Hide step by step</span><span lang="gr">Κρύψε βήμα-βήμα</span>'
+                        : '<span lang="en">Show step by step</span><span lang="gr">Δείξε βήμα-βήμα</span>';
+                    if (shown) navRow._goTo(0);
+                    else drawSimpleGrid(meshSlot, state.afterP3, colors, n, { onHover: hoverExtra, getDirection: direction });
+                });
 
                 const p1 = state.afterP1Steps || 0;
                 const p2 = state.afterP2Steps || 0;
                 const p3 = maxSteps;
-                const totalSteps = p1 + p2 + p3;
-                const theoretical = 3 * (n - 1);
+                const resultHolder = document.createElement('div');
+                resultHolder.style.marginTop = '20px';
                 resultHolder.innerHTML =
-                    '<div class="result-banner">' +
-                    '<div class="result-stat" style="flex-basis:100%;"><div class="label" style="font-size:14px; font-weight:700; color:#1e7a3f;"><span lang="en">The algorithm stops here, our grid has been routed.</span><span lang="gr">Ο αλγόριθμος σταματά, το πλέγμα μας δρομολογήθηκε.</span></div></div>' +
-                    '<div class="result-stat"><div class="num">' + theoretical + '</div><div class="label"><span lang="en">Theoretical Max Step Bound = 3&middot;&radic;N &minus; 3</span><span lang="gr">Θεωρητικό Μέγιστο Όριο Βημάτων = 3 &middot; &radic;N &minus; 3</span></div></div>' +
-                    '<div class="result-stat"><div class="num">' + totalSteps + '</div><div class="label"><span lang="en">Actual Number of Steps (Phase 1 = ' + p1 + ', Phase 2 = ' + p2 + ', Phase 3 = ' + p3 + ')</span><span lang="gr">Πραγματικός Αριθμός Βημάτων (Φάση 1 = ' + p1 + ', Φάση 2 = ' + p2 + ', Φάση 3 = ' + p3 + ')</span></div></div>' +
+                    '<div class="result-banner result-banner--green">' +
+                    '<div class="result-stat" style="flex-basis:100%;"><div class="label" style="font-size:15px;font-weight:700;">' +
+                    '<span lang="en">The algorithm terminates. The mesh has been routed.</span>' +
+                    '<span lang="gr">Ο αλγόριθμος τερματίζει, το πλέγμα δρομολογήθηκε.</span></div></div>' +
+                    '<div class="result-stat"><div class="num">' + (p1+p2+p3) + '</div><div class="label">' +
+                    '<span lang="en">Actual Steps (Phase 1=' + p1 + ', Phase 2=' + p2 + ', Phase 3=' + p3 + ')</span>' +
+                    '<span lang="gr">Πραγματικά Βήματα (Φάση 1=' + p1 + ', Φάση 2=' + p2 + ', Φάση 3=' + p3 + ')</span></div></div>' +
+                    '<div class="result-stat"><div class="num">' + 3*(n-1) + '</div><div class="label">' + formatBound('basic', n) + '</div></div>' +
                     '</div>';
-            }
+                body.appendChild(resultHolder);
+
+                if (n % 2 === 0) {
+                    const knBtn = document.createElement('button');
+                    knBtn.className = 'btn-primary';
+                    knBtn.style.marginTop = '12px';
+                    knBtn.innerHTML =
+                        '<span lang="en">Try the same instance with Krizanc-Narayanan &rarr;</span>' +
+                        '<span lang="gr">Δοκίμασε το ίδιο στιγμιότυπο με τον Αλγόριθμο Krizanc-Narayanan &rarr;</span>';
+                    knBtn.addEventListener('click', function () {
+                        window._oaTransferToKN = {
+                            n: n,
+                            values: packets.map(function (p) {
+                                return { row: p.sourceRow, col: p.sourceCol, val: p.destRow + ',' + p.destCol };
+                            })
+                        };
+                        resetMeshCard();
+                        document.getElementById('algoSelectScreen').style.display = 'block';
+                        document.getElementById('flowContainer').style.display = 'none';
+                        document.querySelectorAll('.algo-card').forEach(function(c) { c.classList.remove('selected'); });
+                        const knCard = document.querySelector('.algo-card[data-algo="krizanc"]');
+                        if (knCard) {
+                            knCard.classList.add('selected');
+                            document.getElementById('selectedAlgo').value = 'krizanc';
+                            document.getElementById('startFlowBtn').disabled = false;
+                            document.getElementById('startFlowBtn').click();
+                        }
+                    });
+                    body.appendChild(knBtn);
+                }
+
+                api.complete();
+            });
         }
+    };
 
-        nextStepBtn.addEventListener('click', function () { goToStep(currentStep + 1); });
-        prevStepBtn.addEventListener('click', function () { goToStep(currentStep - 1); });
-
-        backBtn.addEventListener('click', function () { renderPhase2(); });
-    }
+    return [
+        bigIdeaCard, coloringCard,
+        rearrangeActionCard,
+        phase2ActionCard,
+        phase3ActionCard
+    ];
 }
 
-
-/* ════════════════════════════════════════════════════════════════
-   Shared simple-grid renderer (used for Phase 1c rearrange, Phase 2, Phase 3)
-   options: { getDirection: function(p,r,c) -> {arrow, text} | null,
-              onHoverExtra: function(p,r,c) -> string | null }
-   ════════════════════════════════════════════════════════════════ */
-/* ════════════════════════════════════════════════════════════════
-   Shared simple-grid renderer (used for Phase 1c rearrange, Phase 2, Phase 3)
-   positions: map "r,c" -> ARRAY of packet objects currently at that cell
-              (an array, always -- even for a single packet -- so stacking
-              during transient greedy-routing states renders correctly).
-   options: { getDirection: function(p,r,c) -> {arrow} | null,
-              onHover: function(p,r,c) -> html string | null }
-   ════════════════════════════════════════════════════════════════ */
+/* Grid renderer */
 function drawSimpleGrid(container, positions, colors, n, options) {
     options = options || {};
-    container.innerHTML = '';
-    const table = document.createElement('table');
-    table.className = 'oa-table';
-    const headerRow = document.createElement('tr');
-    headerRow.appendChild(document.createElement('th'));
-    for (let c = 1; c <= n; c++) { const th = document.createElement('th'); th.textContent = c; headerRow.appendChild(th); }
-    table.appendChild(headerRow);
+
+    let table = container._sgTable;
+    if (!table || table.dataset.n !== String(n)) {
+        container.innerHTML = '';
+        table = document.createElement('table');
+        table.className = 'oa-table';
+        table.dataset.n = n;
+
+        const headerRow = document.createElement('tr');
+        headerRow.appendChild(document.createElement('th'));
+        for (let c = 1; c <= n; c++) {
+            const th = document.createElement('th');
+            th.textContent = c;
+            headerRow.appendChild(th);
+        }
+        table.appendChild(headerRow);
+
+        for (let r = 1; r <= n; r++) {
+            const tr = document.createElement('tr');
+            const rh = document.createElement('th'); rh.textContent = r; tr.appendChild(rh);
+            for (let c = 1; c <= n; c++) {
+                const td = document.createElement('td');
+                td.dataset.row = r; td.dataset.col = c;
+                tr.appendChild(td);
+            }
+            table.appendChild(tr);
+        }
+        container.appendChild(table);
+        container._sgTable = table;
+
+        table._tds = {};
+        table.querySelectorAll('td[data-row]').forEach(function (td) {
+            table._tds[td.dataset.row + ',' + td.dataset.col] = td;
+        });
+    }
 
     for (let r = 1; r <= n; r++) {
-        const tr = document.createElement('tr');
-        const rh = document.createElement('th'); rh.textContent = r; tr.appendChild(rh);
         for (let c = 1; c <= n; c++) {
-            const td = document.createElement('td');
-            td.dataset.row = r; td.dataset.col = c;
-            const list = positions[r + ',' + c] || [];
+            const oldTd = table._tds[r + ',' + c];
+            const td = oldTd.cloneNode(false);
+            oldTd.parentNode.replaceChild(td, oldTd);
+            table._tds[r + ',' + c] = td;
 
+            const list = positions[r + ',' + c] || [];
             list.forEach(function (p) {
                 const badgeLine = document.createElement('div');
                 badgeLine.style.marginBottom = '2px';
@@ -1266,16 +1326,14 @@ function drawSimpleGrid(container, positions, colors, n, options) {
                     }
                     if (extra) showTooltip(e.clientX, e.clientY, extra);
                 });
-                td.addEventListener('mousemove', function (e) { if (oaTooltipEl && oaTooltipEl.style.display === 'block') showTooltip(e.clientX, e.clientY, oaTooltipEl.innerHTML); });
+                td.addEventListener('mousemove', function (e) {
+                    if (oaTooltipEl && oaTooltipEl.style.display === 'block') showTooltip(e.clientX, e.clientY, oaTooltipEl.innerHTML);
+                });
                 td.addEventListener('mouseleave', function () {
                     document.querySelectorAll('.oa-table td').forEach(function (x) { x.classList.remove('col-hover', 'target-hover'); });
                     hideTooltip();
                 });
             }
-
-            tr.appendChild(td);
         }
-        table.appendChild(tr);
     }
-    container.appendChild(table);
 }

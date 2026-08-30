@@ -1,0 +1,289 @@
+/* ══════ Zoom / Pan ══════ */
+.zoom-viewport {
+    position: relative;
+    overflow: hidden;
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+    box-sizing: border-box;
+    height: 420px;
+    border: 1px solid #d5dbe3;
+    border-radius: 8px;
+    background: #fafbfc;
+    touch-action: none;
+    cursor: grab;
+}
+.zoom-viewport:active { cursor: grabbing; }
+
+.zoom-controls {
+    position: absolute;
+    bottom: 10px;
+    right: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    z-index: 5;
+}
+.zoom-btn {
+    width: 32px;
+    height: 32px;
+    border-radius: 6px;
+    border: 1px solid #c3cbd6;
+    background: white;
+    font-size: 16px;
+    font-weight: bold;
+    color: #1a2a4a;
+    cursor: pointer;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.15);
+}
+.zoom-btn:hover { background: #eef2f8; }
+
+/* ══════ Theory card ══════ */
+.theory-card {
+    background: #f4f7fc;
+    border: 1px solid #c9d6ea;
+    border-left: 4px solid #2a4a7a;
+    border-radius: 8px;
+    padding: 16px 18px;
+    margin-bottom: 16px;
+}
+.theory-card-body { line-height: 1.55; font-size: 14px; }
+.theory-next-btn {
+    display: block;
+    margin: 14px 0 0 auto;
+    padding: 8px 22px;
+    font-size: 13px;
+}
+
+.theory-reopen-btn {
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    border: 1px solid #2a4a7a;
+    background: white;
+    color: #2a4a7a;
+    font-weight: bold;
+    font-size: 13px;
+    cursor: pointer;
+    margin-left: 6px;
+    vertical-align: middle;
+}
+.theory-reopen-btn:hover { background: #eef2f8; }
+
+.theory-modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(20, 28, 45, 0.55);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2000;
+}
+.theory-modal {
+    position: relative;
+    background: white;
+    max-width: 620px;
+    width: 90%;
+    max-height: 80vh;
+    overflow-y: auto;
+    border-radius: 10px;
+    padding: 24px 26px;
+    box-shadow: 0 12px 40px rgba(0,0,0,0.25);
+}
+.theory-modal-body { line-height: 1.6; font-size: 14px; }
+.theory-modal-close {
+    position: absolute;
+    top: 10px;
+    right: 14px;
+    border: none;
+    background: none;
+    font-size: 22px;
+    line-height: 1;
+    cursor: pointer;
+    color: #666;
+}
+.theory-modal-close:hover { color: #111; }
+
+/* Glossary terms */
+.glossary-term {
+    border-bottom: 1px dashed #2a4a7a;
+    cursor: help;
+    color: #1a2a4a;
+}
+.glossary-tip-fallback {
+    position: absolute;
+}
+
+/* ══════ Skip tutorials toggle (Step 2) ══════ */
+.skip-tutorials-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 14px;
+    font-size: 13px;
+    color: #4a5568;
+}
+
+/* ══════ Language switch (navbar, far right) ══════ */
+.lang-switch {
+    display: flex;
+    flex-direction: row;
+    gap: 4px;
+    align-items: center;
+}
+.lang-btn {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    background: none;
+    border: 1px solid transparent;
+    border-radius: 6px;
+    color: rgba(255,255,255,0.65);
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.3px;
+    cursor: pointer;
+    padding: 4px 8px;
+    transition: all 0.15s;
+    white-space: nowrap;
+}
+.lang-btn:hover {
+    color: white;
+    background: rgba(255,255,255,0.12);
+    border-color: rgba(255,255,255,0.2);
+}
+/* Active language: always highlighted */
+.lang-gr .lang-btn[data-lang="gr"],
+.lang-en .lang-btn[data-lang="en"] {
+    color: white;
+    background: rgba(255,255,255,0.18);
+    border-color: rgba(255,255,255,0.35);
+}
+.lang-btn .lang-flag { font-size: 16px; line-height: 1; }
+.lang-btn .lang-label { font-size: 11px; }
+
+.lang-gr .lang-btn[data-lang="gr"] { display: none; }
+.lang-en .lang-btn[data-lang="en"] { display: none; }
+
+@media (max-width: 540px) {
+    .lang-btn .lang-label { display: none; }
+    .lang-btn { padding: 4px 6px; }
+}
+
+/* ══════ Grid footnote (Step 2) ══════ */
+.grid-footnote {
+    font-size: 12.5px;
+    color: #6b7788;
+    margin-top: 10px;
+    line-height: 1.5;
+}
+
+/* ══════ Step sequence (unified dots/progress-bar flow) ══════ */
+.step-seq-progress {
+    height: 5px;
+    background: #e4e9f1;
+    border-radius: 3px;
+    overflow: hidden;
+    margin-bottom: 16px;
+}
+.step-seq-progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #2a4a7a, #3a6ab0);
+    border-radius: 3px;
+    transition: width 0.25s ease;
+}
+
+.step-seq-card {
+    position: relative;
+    background: white;
+    border: 1px solid #c9d6ea;
+    border-radius: 10px;
+    padding: 22px 24px;
+    min-height: 220px;
+    box-sizing: border-box;
+    min-width: 0;
+    max-width: 100%;
+}
+
+.step-seq-help-btn {
+    position: absolute;
+    top: 14px;
+    right: 14px;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    border: 1px solid #2a4a7a;
+    background: white;
+    color: #2a4a7a;
+    font-weight: bold;
+    font-size: 13px;
+    cursor: pointer;
+    z-index: 5;
+}
+.step-seq-help-btn:hover { background: #eef2f8; }
+
+.step-seq-card-body {
+    padding-right: 30px;
+    overflow-x: auto;
+    min-width: 0;
+}
+
+.step-seq-nav {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    margin-top: 18px;
+    flex-wrap: wrap;
+}
+
+.step-seq-dots {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    flex-wrap: wrap;
+    justify-content: center;
+    flex: 1 1 auto;
+}
+.step-seq-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    border: none;
+    background: #d3dbe8;
+    padding: 0;
+    cursor: pointer;
+}
+.step-seq-dot.done { background: #8fb3d9; }
+.step-seq-dot.current {
+    background: #2a4a7a;
+    width: 12px;
+    height: 12px;
+}
+.step-seq-dot.locked {
+    background: #eef1f6;
+    cursor: not-allowed;
+}
+
+.step-seq-prev:disabled, .step-seq-next:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+@media (max-width: 700px) {
+    .step-seq-nav { flex-direction: column; }
+    .step-seq-dots { order: -1; }
+}
+/* ══════ Responsive card layout ══════ */
+@media (max-width: 700px) {
+    .step-seq-card { padding: 14px 12px; }
+    .step-seq-card-body { padding-right: 14px; }
+    .step-seq-nav { margin-top: 12px; gap: 8px; }
+    .theory-modal { width: 96%; padding: 18px 16px; }
+}
+
+@media (max-width: 480px) {
+    .step-seq-card { border-radius: 6px; }
+    .step-seq-dot { width: 8px; height: 8px; }
+    .step-seq-dot.current { width: 10px; height: 10px; }
+}

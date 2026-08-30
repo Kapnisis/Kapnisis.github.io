@@ -12,24 +12,24 @@ body {
 }
 
 #tableContainer table,
-#phaseContainer table {
+#phaseContainer table,
+.oa-table {
     border-collapse: separate;
     border-spacing: 6px;
     margin: 20px auto;
 }
 
 #tableContainer th,
-#phaseContainer th {
+#phaseContainer th,
+.oa-table th {
     font-size: 13px;
     font-family: monospace;
     padding: 4px;
 }
 
-/* min-width/min-height (not fixed width/height) so cells can grow to fit
-   stacked packets (2+ per cell can occur mid-algorithm) without ever
-   shrinking below a comfortable minimum, regardless of N. */
 #tableContainer td,
-#phaseContainer td {
+#phaseContainer td,
+.oa-table td {
     border: 1.5px solid #888;
     min-width: 64px;
     min-height: 56px;
@@ -43,8 +43,10 @@ body {
     position: relative;
 }
 
+/* Connector lines */
 #tableContainer td::after,
-#phaseContainer td::after {
+#phaseContainer td::after,
+.oa-table td::after {
     content: '';
     position: absolute;
     top: 50%;
@@ -55,12 +57,14 @@ body {
 }
 
 #tableContainer td:last-child::after,
-#phaseContainer td:last-child::after {
+#phaseContainer td:last-child::after,
+.oa-table td:last-child::after {
     display: none;
 }
 
 #tableContainer td::before,
-#phaseContainer td::before {
+#phaseContainer td::before,
+.oa-table td::before {
     content: '';
     position: absolute;
     bottom: -7px;
@@ -71,7 +75,8 @@ body {
 }
 
 #tableContainer tr:last-child td::before,
-#phaseContainer tr:last-child td::before {
+#phaseContainer tr:last-child td::before,
+.oa-table tr:last-child td::before {
     display: none;
 }
 
@@ -102,4 +107,33 @@ th, td {
 
 .lang-gr [lang="en"] {
     display: none;
+}
+/* ══════ Responsive cell sizes ══════ */
+@media (max-width: 700px) {
+    #tableContainer td,
+    #phaseContainer td,
+    .oa-table td {
+        min-width: 44px;
+        min-height: 40px;
+        font-size: 11px;
+        padding: 2px 4px;
+    }
+    #tableContainer th,
+    #phaseContainer th,
+    .oa-table th { font-size: 10px; }
+    #tableContainer { overflow-x: auto; }
+}
+
+@media (max-width: 480px) {
+    #tableContainer td,
+    #phaseContainer td,
+    .oa-table td {
+        min-width: 32px;
+        min-height: 32px;
+        font-size: 10px;
+        padding: 2px;
+    }
+    #tableContainer th,
+    #phaseContainer th,
+    .oa-table th { font-size: 9px; }
 }
