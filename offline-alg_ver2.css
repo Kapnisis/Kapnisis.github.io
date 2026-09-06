@@ -648,18 +648,9 @@
     flex-direction: column;
     min-width: 0;
 }
-.coloring-stack > .matching-toggle-row { order: 1; }
 .coloring-stack > .matching-layout { order: 2; }
 .coloring-stack > .coloring-control-box { order: 3; margin-top: 14px; }
 .coloring-stack > .coloring-footnote { order: 4; font-size: 11px; color: #888; margin-top: 8px; }
-
-.matching-toggle-row {
-    display: flex;
-    gap: 8px;
-    flex-wrap: wrap;
-    margin-bottom: 10px;
-}
-.matching-toggle-btn { font-size: 12px; }
 
 .coloring-control-box {
     background: #f4f7fc;
@@ -688,11 +679,10 @@
 }
 .kn-col-toggle {
     flex: 0 0 auto;
-    width: 20px;
-    height: 20px;
-    line-height: 1;
-    padding: 0;
-    font-size: 13px;
+    min-width: 20px;
+    line-height: 1.4;
+    padding: 2px 8px;
+    font-size: 12px;
     font-weight: 700;
     color: #2a4a7a;
     background: #fff;

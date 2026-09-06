@@ -159,14 +159,13 @@
     background: rgba(255,255,255,0.18);
     border-color: rgba(255,255,255,0.35);
 }
-.lang-btn .lang-flag { font-size: 16px; line-height: 1; }
-.lang-btn .lang-label { font-size: 11px; }
-
-.lang-gr .lang-btn[data-lang="gr"] { display: none; }
-.lang-en .lang-btn[data-lang="en"] { display: none; }
+.lang-sep {
+    color: rgba(255,255,255,0.45);
+    font-size: 13px;
+    line-height: 1;
+}
 
 @media (max-width: 540px) {
-    .lang-btn .lang-label { display: none; }
     .lang-btn { padding: 4px 6px; }
 }
 
@@ -286,4 +285,101 @@
     .step-seq-card { border-radius: 6px; }
     .step-seq-dot { width: 8px; height: 8px; }
     .step-seq-dot.current { width: 10px; height: 10px; }
+}
+
+/* ══════ Routing animation ══════ */
+.anim-launcher { margin-top: 16px; }
+
+.anim-panel {
+    margin-top: 14px;
+    border: 1px solid #c9d6ea;
+    border-radius: 8px;
+    background: #f4f7fc;
+    padding: 12px 14px;
+}
+
+.anim-bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+.anim-btn {
+    flex: 0 0 auto;
+    padding: 6px 14px;
+    font-size: 13px;
+}
+.anim-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+.anim-speed {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin: 0 0 0 auto;
+    font-size: 12.5px;
+    font-weight: 700;
+    color: #2a4a7a;
+}
+.anim-speed select {
+    font-size: 12.5px;
+    padding: 4px 6px;
+    border: 1px solid #bcc5d0;
+    border-radius: 6px;
+    background: #fff;
+    color: #333;
+}
+
+.anim-head {
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-top: 12px;
+}
+.anim-label {
+    font-size: 15px;
+    font-weight: 700;
+    color: #1e3a6a;
+}
+.anim-counter {
+    margin-left: auto;
+    font-family: monospace;
+    font-size: 13px;
+    color: #4a5a70;
+}
+.anim-offline-tag {
+    display: inline-block;
+    margin-left: 6px;
+    padding: 1px 7px;
+    border-radius: 10px;
+    background: #e6ecf6;
+    border: 1px solid #c3cbd6;
+    font-size: 11px;
+    font-weight: 700;
+    color: #4a5a70;
+    vertical-align: middle;
+}
+
+.anim-slider {
+    width: 100%;
+    margin: 10px 0 4px 0;
+    accent-color: #2a4a7a;
+}
+
+.anim-grid { margin-top: 6px; }
+
+@media (max-width: 700px) {
+    .anim-speed { margin-left: 0; }
+    .anim-label { font-size: 13.5px; }
+    .anim-btn { padding: 6px 10px; font-size: 12px; }
+}
+
+.help-hint-note {
+    margin-top: 16px;
+    padding: 10px 14px;
+    border-radius: 6px;
+    background: #f4f7fc;
+    border: 1px solid #c9d6ea;
+    font-size: 12.5px;
+    color: #2a4a7a;
 }

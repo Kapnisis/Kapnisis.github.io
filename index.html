@@ -10,8 +10,8 @@
         integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
 
     <link href="grid_ver2.css?v=2" rel="stylesheet" />
-    <link href="offline-alg_ver2.css?v=8" rel="stylesheet" />
-    <link href="shared-ui.css?v=2" rel="stylesheet" />
+    <link href="offline-alg_ver2.css?v=9" rel="stylesheet" />
+    <link href="shared-ui.css?v=4" rel="stylesheet" />
 
     <!-- Zoom / Pan -->
     <script src="https://cdn.jsdelivr.net/npm/@panzoom/panzoom@4.5.1/dist/panzoom.min.js"></script>
@@ -34,14 +34,9 @@
                 <span lang="gr">Offline Δρομολόγηση σε Πλέγμα</span>
             </a>
             <div class="lang-switch" style="flex-shrink: 0; margin-left: 16px;">
-                <button class="lang-btn" data-lang="gr" onclick="setLang('gr')">
-                    <span class="lang-flag">🇬🇷</span>
-                    <span class="lang-label">ΕΛΛΗΝΙΚΑ</span>
-                </button>
-                <button class="lang-btn" data-lang="en" onclick="setLang('en')">
-                    <span class="lang-flag">🇬🇧</span>
-                    <span class="lang-label">ENGLISH</span>
-                </button>
+                <button class="lang-btn" data-lang="gr" onclick="setLang('gr')">ΕΛ</button>
+                <span class="lang-sep">|</span>
+                <button class="lang-btn" data-lang="en" onclick="setLang('en')">EN</button>
             </div>
         </div>
     </nav>
@@ -113,9 +108,10 @@
     </div>
 
     <script src="shared-ui.js?v=17"></script>
+    <script src="animation.js?v=2"></script>
     <script src="grid_ver2.js?v=5"></script>
-    <script src="offline-alg_ver2.js?v=14"></script>
-<script src="k-n.js?v=10"></script>
+    <script src="offline-alg_ver2.js?v=17"></script>
+<script src="k-n.js?v=12"></script>
 
     <script>
         window.skipTutorials = false;

@@ -338,6 +338,7 @@ function knDrawBipartite(container, nodesLeft, nodesRight, edges, caption) {
         l.setAttribute('text-anchor', 'end'); l.classList.add('rg-node-label');
         l.textContent = nd.label;
         svg.appendChild(l);
+        knBindBipartiteNodeHover(svg, [c, l], 'l', i);
         const sub = document.createElementNS(ns, 'text');
         sub.setAttribute('x', leftX - 2); sub.setAttribute('y', y - 8);
         sub.setAttribute('text-anchor', 'end'); sub.classList.add('rg-path-label');
@@ -355,6 +356,7 @@ function knDrawBipartite(container, nodesLeft, nodesRight, edges, caption) {
         l.classList.add('rg-node-label');
         l.textContent = nd.label;
         svg.appendChild(l);
+        knBindBipartiteNodeHover(svg, [c, l], 'r', i);
         const sub = document.createElementNS(ns, 'text');
         sub.setAttribute('x', rightX + 2); sub.setAttribute('y', y - 8);
         sub.classList.add('rg-path-label');
@@ -372,6 +374,24 @@ function knDrawBipartite(container, nodesLeft, nodesRight, edges, caption) {
 
     container._knBp = { key: cacheKey, svg: svg, edgeLayer: edgeLayer, cap: cap, subLeft: subLeft, subRight: subRight };
     knBipartiteSubLabels(container._knBp, nodesLeft, nodesRight);
+}
+
+function knBindBipartiteNodeHover(svg, els, side, idx) {
+    els.forEach(function (el) {
+        el.style.cursor = 'pointer';
+        el.addEventListener('mouseenter', function () {
+            svg.querySelectorAll('.rg-edge').forEach(function (e) {
+                const match = (side === 'l' ? e.dataset.li : e.dataset.ri) === String(idx);
+                e.classList.toggle('highlighted', match);
+                e.classList.toggle('faded', !match);
+            });
+        });
+        el.addEventListener('mouseleave', function () {
+            svg.querySelectorAll('.rg-edge').forEach(function (e) {
+                e.classList.remove('highlighted', 'faded');
+            });
+        });
+    });
 }
 
 function knBipartiteSubLabels(cache, nodesLeft, nodesRight) {
@@ -401,6 +421,8 @@ function knBipartiteEdges(layer, edges, yOf, leftX, rightX) {
         if (e.stroke) { path.style.stroke = e.stroke; path.style.strokeWidth = e.width || 2; }
         else path.classList.add('uncolored');
         if (e.dash) { path.style.strokeDasharray = '5,4'; path.style.opacity = '0.55'; }
+        path.dataset.li = e.li;
+        path.dataset.ri = e.ri;
         if (e.packetId != null) path.dataset.packetId = e.packetId;
         if (e.title) {
             const t = document.createElementNS(ns, 'title');
@@ -678,6 +700,79 @@ function buildKrizancAlgorithmCards() {
         badge.style.boxShadow = '0 0 0 1px ' + g.color;
     };
 
+    function buildKnAnimationConfig() {
+        const p2traj = knBuildPhase2Traj(packets, n, half);
+        const p4traj = knBuildPhase4Traj(packets, n, half);
+
+        const sourcePositions = {};
+        packets.forEach(function (p) {
+            const key = p.sourceRow + ',' + p.sourceCol;
+            (sourcePositions[key] = sourcePositions[key] || []).push(p);
+        });
+
+        function dirFromTraj(traj, t) {
+            return function (p) {
+                const arr = traj[p.id];
+                if (!arr || t >= arr.length - 1) return null;
+                const cur = arr[t], nxt = arr[t + 1];
+                if (nxt.r > cur.r) return { arrow: '\u2193' };
+                if (nxt.r < cur.r) return { arrow: '\u2191' };
+                if (nxt.c > cur.c) return { arrow: '\u2192' };
+                if (nxt.c < cur.c) return { arrow: '\u2190' };
+                return null;
+            };
+        }
+        function frame(label, step, offline, positionsFn, opts) {
+            return {
+                label: label, step: step, offline: !!offline,
+                draw: function (slot) {
+                    const o = Object.assign({ reserve: 2, onHover: hoverFn }, opts);
+                    knDrawGrid(slot, positionsFn(), n, half, o);
+                }
+            };
+        }
+
+        const frames = [];
+        frames.push(frame(animFrameLabel('Αρχικό Πλέγμα', 'Initial Mesh'), 0, true,
+            function () { return sourcePositions; }, { plain: true, onHover: null }));
+        frames.push(frame(animFrameLabel('Υπολογισμός ISM', 'ISM computation'), 0, true,
+            function () { return sourcePositions; },
+            { tint: true, getDirection: dirFromTraj(p2traj, 0) }));
+
+        let acc = 0;
+        for (let t = 1; t <= half; t++) {
+            acc++;
+            (function (step, total) {
+                frames.push(frame(animPhaseLabel(1, step), total, false,
+                    function () { return knPositionsAt(packets, p2traj, step); },
+                    { tint: true, getDirection: dirFromTraj(p2traj, step) }));
+            })(t, acc);
+        }
+
+        frames.push(frame(animFrameLabel('Διάσπαση σε Μεταθέσεις Α &amp; Β', 'Split into Permutations A &amp; B'), acc, true,
+            function () { return knPositionsAt(packets, p2traj, half); },
+            { tint: true, getStyle: permStyle }));
+
+        for (let t = 1; t <= S2; t++) {
+            acc++;
+            (function (step, total) {
+                frames.push(frame(animPhaseLabel(2, step), total, false,
+                    function () { return knPositionsAt(packets, traj2, step); },
+                    { tint: true, getStyle: permStyle, getDirection: dirFromTraj(traj2, step) }));
+            })(t, acc);
+        }
+        for (let t = 1; t <= half; t++) {
+            acc++;
+            (function (step, total) {
+                frames.push(frame(animPhaseLabel(3, step), total, false,
+                    function () { return knPositionsAt(packets, p4traj, step); },
+                    { tint: true, getDirection: dirFromTraj(p4traj, step) }));
+            })(t, acc);
+        }
+
+        return { frames: frames, totalSteps: half + S2 + half };
+    }
+
     function makeTwoCols(parent, titleGrL, titleEnL, titleGrR, titleEnR) {
         const layout = document.createElement('div');
         layout.className = 'matching-layout';
@@ -702,10 +797,9 @@ function buildKrizancAlgorithmCards() {
             function apply() {
                 grid.style.display = hidden ? 'none' : '';
                 div.classList.toggle('is-collapsed', hidden);
-                toggle.textContent = hidden ? '+' : '\u2212';
-                toggle.title = hidden
-                    ? (isGrLang() ? 'Εμφάνιση' : 'Show')
-                    : (isGrLang() ? 'Απόκρυψη' : 'Hide');
+                toggle.innerHTML = hidden
+                    ? '<span lang="en">Show</span><span lang="gr">Εμφάνιση</span>'
+                    : '<span lang="en">Hide</span><span lang="gr">Κρύψε</span>';
                 requestAnimationFrame(function () { window.dispatchEvent(new Event('resize')); });
             }
             toggle.addEventListener('click', function () { hidden = !hidden; apply(); });
@@ -793,6 +887,12 @@ function knHighlightOddEvenPairs(routeGrid, t, boundaries, permIdx, mode, gridOp
             div.className = 'substep-explain';
             div.innerHTML = bigIdeaHtml;
             body.appendChild(div);
+            const note = document.createElement('div');
+            note.className = 'help-hint-note';
+            note.innerHTML =
+                '<span lang="en">In every phase, press the «?» button for more details.</span>' +
+                '<span lang="gr">Σε κάθε φάση, πάτησε το κουμπί «?» για περισσότερες λεπτομέρειες.</span>';
+            body.appendChild(note);
         }
     };
 
@@ -1183,9 +1283,16 @@ function knHighlightOddEvenPairs(routeGrid, t, boundaries, permIdx, mode, gridOp
             renderBalls();
             prevBtn.disabled = idx <= 0;
             nextBtn.disabled = idx >= steps.length - 1;
-            const gr = groupOf(idx);
-            skipGroupBtn.style.display = (idx < gr.end) ? 'inline-block' : 'none';
-            skipGroupBtn.onclick = function () { goTo(gr.end); };
+            if (opts.skipTo) {
+                const st = opts.skipTo;
+                skipGroupBtn.innerHTML = st.label;
+                skipGroupBtn.style.display = (idx < st.index) ? 'inline-block' : 'none';
+                skipGroupBtn.onclick = function () { goTo(st.index); };
+            } else {
+                const gr = groupOf(idx);
+                skipGroupBtn.style.display = (idx < gr.end) ? 'inline-block' : 'none';
+                skipGroupBtn.onclick = function () { goTo(gr.end); };
+            }
             skipAllBtn.style.display = (idx >= steps.length - 1) ? 'none' : 'inline-block';
 
             if (idx >= steps.length - 1 && typeof opts.onEnd === 'function') opts.onEnd();
@@ -1271,8 +1378,8 @@ function knHighlightOddEvenPairs(routeGrid, t, boundaries, permIdx, mode, gridOp
                 pickNote.className = 'substep-explain';
                 pickNote.style.marginBottom = '12px';
                 pickNote.innerHTML =
-                    '<span lang="en">Goal of Phase 2: solve the routing problem separately in each sub-mesh. Press «?» for more details.</span>' +
-                    '<span lang="gr">Στόχος της Φάσης 2: Λύνουμε το πρόβλημα δρομολόγησης ξεχωριστά σε κάθε sub-mesh. Επίλεξε «?» για περισσότερες λεπτομέρειες.</span>';
+                    '<span lang="en">Goal of Phase 2: solve the routing problem separately in each sub-mesh.</span>' +
+                    '<span lang="gr">Στόχος της Φάσης 2: Λύνουμε το πρόβλημα δρομολόγησης ξεχωριστά σε κάθε sub-mesh.</span>';
                 content.appendChild(pickNote);
 
                 content.appendChild(buildStep3NavRow(null));
@@ -1618,7 +1725,18 @@ function knHighlightOddEvenPairs(routeGrid, t, boundaries, permIdx, mode, gridOp
                         },
                         draw: function () { drawRouteGrid(Q.gS2[g], 0); drawHallGraph(ms.length - 1); }
                     });
-                    return knMakeTimeline(steps, { onEnd: markRouted });
+                    let firstOeIdx = steps.length - 1;
+                    for (let i = 0; i < steps.length; i++) {
+                        if (/^oe\d/.test(steps[i].group)) { firstOeIdx = i; break; }
+                    }
+                    return knMakeTimeline(steps, {
+                        onEnd: markRouted,
+                        skipTo: {
+                            index: firstOeIdx,
+                            label: '<span lang="en">Skip to end of coloring</span>' +
+                                '<span lang="gr">Παράλειψη έως το τέλος του χρωματισμού</span>'
+                        }
+                    });
                 }
 
                 function buildBothTimeline() {
@@ -1840,8 +1958,8 @@ function knHighlightOddEvenPairs(routeGrid, t, boundaries, permIdx, mode, gridOp
             const desc = document.createElement('p');
             desc.className = 'substep-explain';
             desc.innerHTML =
-                '<span lang="en">Goal of Phase 3: every <span class="glossary-term" data-term="packet">packet</span> moves within its row from its virtual destination to its final destination in exactly h = ' + half + ' <span class="glossary-term" data-term="step">steps</span>. Arrows show the direction of movement for Long packets.</span>' +
-                '<span lang="gr">Στόχος της Φάσης 3: κάθε <span class="glossary-term" data-term="packet">πακέτο</span> κινείται εντός της γραμμής του από το virtual destination στον τελικό προορισμό σε ακριβώς h = ' + half + ' <span class="glossary-term" data-term="step">βήματα</span>. Τα βελάκια δείχνουν την κατεύθυνση κίνησης των Long πακέτων.</span>';
+                '<span lang="en">Goal of Phase 3: move the <span class="glossary-term" data-term="packet">packets</span> within their row from the virtual destination to their final destination. Arrows show the direction of movement for Long packets.</span>' +
+                '<span lang="gr">Στόχος της Φάσης 3: Μετακίνησε τα <span class="glossary-term" data-term="packet">πακέτα</span> στη γραμμή τους από το virtual destination στον τελικό τους προορισμό. Τα βελάκια δείχνουν την κατεύθυνση κίνησης των Long πακέτων.</span>';
             body.appendChild(desc);
 
             const vdPositions = {};
@@ -1912,6 +2030,7 @@ function knHighlightOddEvenPairs(routeGrid, t, boundaries, permIdx, mode, gridOp
                     '<br><span lang="en">Phase 1 = ' + half + ', Phase 2 = ' + S2 + ', Phase 3 = ' + half + '</span>' +
                     '<span lang="gr">Φάση 1 = ' + half + ', Φάση 2 = ' + S2 + ', Φάση 3 = ' + half + '</span></div></div>' +
                     '</div>';
+                appendAnimationLauncher(bannerSlot, buildKnAnimationConfig);
                 api.complete();
             });
 
