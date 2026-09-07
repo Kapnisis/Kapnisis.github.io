@@ -299,11 +299,11 @@ function buildBasicAlgorithmCards() {
 
     const bigIdeaHtml =
         '<span lang="en">We can route a square <span class="glossary-term" data-term="mesh">mesh</span> (&radic;N rows &times; &radic;N columns) in 3&radic;N&minus;3 <span class="glossary-term" data-term="step">steps</span>, keeping the maximum queue size at every processor = 1, by running our algorithm in 3 phases.<br><br>' +
-        'In Phase 1 we rearrange the <span class="glossary-term" data-term="packet">packets</span> within each column so that at most one <span class="glossary-term" data-term="packet">packet</span> in each row is destined for each column. In Phase 2 we route every <span class="glossary-term" data-term="packet">packet</span> within its row to its destination column. In Phase 3 we route every <span class="glossary-term" data-term="packet">packet</span> within its column to its destination row (i.e. to its final destination).<br><br>' +
-        'The hard part — and the only <span class="glossary-term" data-term="offline">offline</span> step — is finding the Phase 1 column rearrangement such that at most one <span class="glossary-term" data-term="packet">packet</span> per row is destined for any given column. Once that is done, each phase is easy to implement in &radic;N&minus;1 <span class="glossary-term" data-term="step">steps</span> (queue&nbsp;=&nbsp;1) using a <span class="glossary-term" data-term="greedy">greedy</span> algorithm to route <span class="glossary-term" data-term="packet">packets</span> within each row or column.</span>' +
+        'In Phase 1 we permute <span class="glossary-term" data-term="packet">packets</span> within each column so that at most one <span class="glossary-term" data-term="packet">packet</span> in each row is destined for each column. In Phase 2 we route every <span class="glossary-term" data-term="packet">packet</span> within its row to its destination column. In Phase 3 we route every <span class="glossary-term" data-term="packet">packet</span> within its column to its destination row (i.e. to its final destination).<br><br>' +
+        'The hard part — and the only <span class="glossary-term" data-term="offline">offline</span> step — is finding the Phase 1 column permutation such that at most one <span class="glossary-term" data-term="packet">packet</span> per row is destined for any given column. Once that is done, each phase is easy to implement in &radic;N&minus;1 <span class="glossary-term" data-term="step">steps</span> (queue&nbsp;=&nbsp;1) using a <span class="glossary-term" data-term="greedy">greedy</span> algorithm to route <span class="glossary-term" data-term="packet">packets</span> within each row or column.</span>' +
         '<span lang="gr">Μπορούμε να δρομολογήσουμε ένα τετραγωνικό <span class="glossary-term" data-term="mesh">πλέγμα</span> (&radic;Ν γραμμές &times; &radic;Ν στήλες) σε 3&radic;Ν&minus;3 <span class="glossary-term" data-term="step">βήματα</span>, διατηρώντας σε κάθε επεξεργαστή μέγιστο μέγεθος ουράς = 1, εκτελώντας τον αλγόριθμό μας σε 3 φάσεις.<br><br>' +
-        'Στη Φάση 1, αναδιατάσσουμε τα <span class="glossary-term" data-term="packet">πακέτα</span> εντός κάθε στήλης, έτσι ώστε το πολύ ένα <span class="glossary-term" data-term="packet">πακέτο</span> σε κάθε γραμμή να προορίζεται για κάθε στήλη. Στη Φάση 2, δρομολογούμε κάθε <span class="glossary-term" data-term="packet">πακέτο</span> εντός της γραμμής του προς τη σωστή στήλη. Στη Φάση 3, δρομολογούμε κάθε <span class="glossary-term" data-term="packet">πακέτο</span> εντός της στήλης του προς τη σωστή γραμμή (δηλαδή, στον προορισμό του).<br><br>' +
-        'Το δύσκολο κομμάτι — και το μόνο <span class="glossary-term" data-term="offline">offline</span> τμήμα — είναι να βρεθεί ο τρόπος αναδιάταξης των <span class="glossary-term" data-term="packet">πακέτων</span> εντός κάθε στήλης κατά τη Φάση 1, ώστε να υπάρχει το πολύ ένα <span class="glossary-term" data-term="packet">πακέτο</span> σε κάθε γραμμή που να προορίζεται για οποιαδήποτε στήλη. Μόλις γίνει αυτό, κάθε φάση υλοποιείται εύκολα σε &radic;Ν&minus;1 <span class="glossary-term" data-term="step">βήματα</span> (ουρά&nbsp;=&nbsp;1), χρησιμοποιώντας τον <span class="glossary-term" data-term="greedy">άπληστο</span> αλγόριθμο για τη δρομολόγηση των <span class="glossary-term" data-term="packet">πακέτων</span> εντός κάθε γραμμής ή στήλης.</span>';
+        'Στη Φάση 1, μεταθέτουμε τα <span class="glossary-term" data-term="packet">πακέτα</span> εντός κάθε στήλης, έτσι ώστε το πολύ ένα <span class="glossary-term" data-term="packet">πακέτο</span> σε κάθε γραμμή να προορίζεται για κάθε στήλη. Στη Φάση 2, δρομολογούμε κάθε <span class="glossary-term" data-term="packet">πακέτο</span> εντός της γραμμής του προς τη σωστή στήλη. Στη Φάση 3, δρομολογούμε κάθε <span class="glossary-term" data-term="packet">πακέτο</span> εντός της στήλης του προς τη σωστή γραμμή (δηλαδή, στον προορισμό του).<br><br>' +
+        'Το δύσκολο κομμάτι — και το μόνο <span class="glossary-term" data-term="offline">offline</span> τμήμα — είναι να βρεθεί ο τρόπος μετάθεσης των <span class="glossary-term" data-term="packet">πακέτων</span> εντός κάθε στήλης κατά τη Φάση 1, ώστε να υπάρχει το πολύ ένα <span class="glossary-term" data-term="packet">πακέτο</span> σε κάθε γραμμή που να προορίζεται για οποιαδήποτε στήλη. Μόλις γίνει αυτό, κάθε φάση υλοποιείται εύκολα σε &radic;Ν&minus;1 <span class="glossary-term" data-term="step">βήματα</span> (ουρά&nbsp;=&nbsp;1), χρησιμοποιώντας τον <span class="glossary-term" data-term="greedy">άπληστο</span> αλγόριθμο για τη δρομολόγηση των <span class="glossary-term" data-term="packet">πακέτων</span> εντός κάθε γραμμής ή στήλης.</span>';
 
     const bigIdeaCard = {
         id: 'p1-bigidea', navLabel: '<span lang="en">Big Idea</span><span lang="gr">Βασική Ιδέα</span>', kind: 'action', theory: null, interactive: false,
@@ -312,23 +312,17 @@ function buildBasicAlgorithmCards() {
             div.className = 'substep-explain';
             div.innerHTML = bigIdeaHtml;
             body.appendChild(div);
-            const note = document.createElement('div');
-            note.className = 'help-hint-note';
-            note.innerHTML =
-                '<span lang="en">In every phase, press the «?» button for more details.</span>' +
-                '<span lang="gr">Σε κάθε φάση, πάτησε το κουμπί «?» για περισσότερες λεπτομέρειες.</span>';
-            body.appendChild(note);
         }
     };
 
     const hallTheory =
-        '<span lang="en"><strong>The goal of Phase 1</strong> is to rearrange the packets within each column so that at most one packet per row is destined for any given column — which guarantees no two packets will conflict during the greedy routing of Phases 2 and 3.<br><br>' +
-        'To achieve each rearrangement, we color each row of the mesh with a different color (Color 1 = Row 1, etc.) and color the packets in each column so that packets of the same color have a different destination column.<br><br>' +
+        '<span lang="en"><strong>The goal of Phase 1</strong> is to permute packets within each column so that at most one packet per row is destined for any given column — which guarantees no two packets will conflict during the greedy routing of Phases 2 and 3.<br><br>' +
+        'To achieve each permutation, we color each row of the mesh with a different color (Color 1 = Row 1, etc.) and color the packets in each column so that packets of the same color have a different destination column.<br><br>' +
         'We then build a bipartite graph: on one side &radic;N red nodes (K1…K&radic;N) representing each source column, on the other &radic;N blue nodes (M1…M&radic;N) representing each destination column. We connect them with edges representing packets: a packet at (a,b) with destination (c,d) gives edge K<sub>b</sub>&ndash;M<sub>d</sub>.<br><br>' +
         'We then color each edge so that no node K has two edges of the same color (so each column\'s packets end up in different rows after rearrangement) and no node M has two edges of the same color (so each row ends up with different destination columns after rearrangement).<br><br>' +
         'This is achieved using <span class="glossary-term" data-term="hall">Hall\'s Matching Theorem</span>, since our graph is bipartite and &radic;N-regular.</span>' +
-        '<span lang="gr"><strong>Ο στόχος της Φάσης 1</strong> είναι να αναδιατάξουμε τα πακέτα εντός κάθε στήλης, έτσι ώστε το πολύ ένα πακέτο σε κάθε γραμμή να προορίζεται για κάθε στήλη — κάτι που εξασφαλίζει ότι δεν θα δημιουργηθούν ουρές κατά την εκτέλεση του άπληστου αλγορίθμου στις Φάσεις 2 και 3.<br><br>' +
-        'Για να επιτύχουμε κάθε αναδιάταξη, χαρακτηρίζουμε κάθε γραμμή του πλέγματος με διαφορετικό χρώμα (Χρώμα 1 αντιστοιχεί στη Γραμμή 1 κ.ο.κ.) και χρωματίζουμε τα πακέτα σε κάθε στήλη ώστε τα πακέτα ίδιου χρώματος να έχουν προορισμό διαφορετική στήλη.<br><br>' +
+        '<span lang="gr"><strong>Ο στόχος της Φάσης 1</strong> είναι να μεταθέσουμε τα πακέτα εντός κάθε στήλης, έτσι ώστε το πολύ ένα πακέτο σε κάθε γραμμή να προορίζεται για κάθε στήλη — κάτι που εξασφαλίζει ότι δεν θα δημιουργηθούν ουρές κατά την εκτέλεση του άπληστου αλγορίθμου στις Φάσεις 2 και 3.<br><br>' +
+        'Για να επιτύχουμε κάθε μετάθεση, χαρακτηρίζουμε κάθε γραμμή του πλέγματος με διαφορετικό χρώμα (Χρώμα 1 αντιστοιχεί στη Γραμμή 1 κ.ο.κ.) και χρωματίζουμε τα πακέτα σε κάθε στήλη ώστε τα πακέτα ίδιου χρώματος να έχουν προορισμό διαφορετική στήλη.<br><br>' +
         'Στη συνέχεια, δημιουργούμε ένα διμερές γράφημα: στη μια πλευρά &radic;N κόκκινους κόμβους (K1…K&radic;N) που αντιπροσωπεύουν κάθε στήλη θέσης και στην άλλη &radic;N μπλε κόμβους (M1…M&radic;N) που αντιπροσωπεύουν κάθε στήλη προορισμού. Ενώνουμε τους κόμβους με ακμές που αντιπροσωπεύουν τα πακέτα. Ένα πακέτο που βρίσκεται στη θέση (a,b) και έχει προορισμό (c,d) δίνει την ακμή K<sub>b</sub>&ndash;M<sub>d</sub>.<br><br>' +
         'Χρωματίζουμε κάθε ακμή έτσι ώστε κανένας κόμβος Κ να μην έχει ακμές ίδιου χρώματος (άρα τα πακέτα κάθε στήλης θα έχουν διαφορετική γραμμή μετά τη μετάθεση) και κανένας κόμβος Μ να μην έχει ακμές ίδιου χρώματος (άρα μετά τη μετάθεση κάθε γραμμή έχει διαφορετικές στήλες προορισμού).<br><br>' +
         'Αυτό επιτυγχάνεται με τη βοήθεια του <span class="glossary-term" data-term="hall">Θεωρήματος Ταιριάσματος του Hall</span>, αφού το γράφημά μας είναι διμερές και &radic;N-κανονικό.</span>';
@@ -393,36 +387,32 @@ function buildBasicAlgorithmCards() {
         phaseHint.className = 'substep-explain';
         phaseHint.style.marginBottom = '14px';
         phaseHint.innerHTML =
-            '<span lang="en">In Phase 1 we rearrange the packets within each column so that at most one packet per row is destined for each column.</span>' +
-            '<span lang="gr">Στη Φάση 1, αναδιατάσσουμε τα πακέτα εντός κάθε στήλης, έτσι ώστε το πολύ ένα πακέτο σε κάθε γραμμή να προορίζεται για κάθε στήλη.</span>';
+            '<span lang="en">In Phase 1 we permute packets within each column so that at most one packet per row is destined for each column. Press «?» for details.</span>' +
+            '<span lang="gr">Στη Φάση 1, μεταθέτουμε τα πακέτα εντός κάθε στήλης, έτσι ώστε το πολύ ένα πακέτο σε κάθε γραμμή να προορίζεται για κάθε στήλη. Πάτησε το «?» για πληροφορίες.</span>';
         body.appendChild(phaseHint);
 
         const stack = document.createElement('div');
         stack.className = 'coloring-stack';
         body.appendChild(stack);
 
+        const toggleRow = document.createElement('div');
+        toggleRow.className = 'matching-toggle-row';
+        stack.appendChild(toggleRow);
+
+        const meshToggleBtn = document.createElement('button');
+        meshToggleBtn.className = 'btn-secondary matching-toggle-btn';
+        toggleRow.appendChild(meshToggleBtn);
+        const graphToggleBtn = document.createElement('button');
+        graphToggleBtn.className = 'btn-secondary matching-toggle-btn';
+        toggleRow.appendChild(graphToggleBtn);
+
         const layout = document.createElement('div');
         layout.className = 'matching-layout';
         stack.appendChild(layout);
 
-        function buildColHead(wrap, titleEn, titleGr) {
-            const head = document.createElement('div');
-            head.className = 'kn-col-head';
-            const title = document.createElement('span');
-            title.innerHTML = '<span lang="en">' + titleEn + '</span><span lang="gr">' + titleGr + '</span>';
-            head.appendChild(title);
-            const toggle = document.createElement('button');
-            toggle.type = 'button';
-            toggle.className = 'kn-col-toggle';
-            head.appendChild(toggle);
-            wrap.appendChild(head);
-            return toggle;
-        }
-
         const gridWrap = document.createElement('div');
         gridWrap.className = 'matching-grid-col';
         layout.appendChild(gridWrap);
-        const meshToggleBtn = buildColHead(gridWrap, 'Mesh', 'Πλέγμα');
         const gridCol = document.createElement('div');
         gridCol.style.minWidth = '0';
         gridWrap.appendChild(gridCol);
@@ -430,7 +420,6 @@ function buildBasicAlgorithmCards() {
         const graphWrap = document.createElement('div');
         graphWrap.className = 'matching-graph-col';
         layout.appendChild(graphWrap);
-        const graphToggleBtn = buildColHead(graphWrap, 'Graph', 'Γράφημα');
         const graphCol = document.createElement('div');
         graphCol.style.minWidth = '0';
         graphWrap.appendChild(graphCol);
@@ -476,18 +465,16 @@ function buildBasicAlgorithmCards() {
         let meshHidden = !!state._coloringMeshHidden;
         let graphHidden = !!state._coloringGraphHidden;
         function applyMeshToggleLabel() {
-            gridCol.style.display = meshHidden ? 'none' : '';
-            gridWrap.classList.toggle('is-collapsed', meshHidden);
+            gridWrap.style.display = meshHidden ? 'none' : '';
             meshToggleBtn.innerHTML = meshHidden
-                ? '<span lang="en">Show</span><span lang="gr">Εμφάνιση</span>'
-                : '<span lang="en">Hide</span><span lang="gr">Κρύψε</span>';
+                ? '<span lang="en">Show mesh</span><span lang="gr">Εμφάνιση πλέγματος</span>'
+                : '<span lang="en">Hide mesh</span><span lang="gr">Απόκρυψη πλέγματος</span>';
         }
         function applyGraphToggleLabel() {
-            graphCol.style.display = graphHidden ? 'none' : '';
-            graphWrap.classList.toggle('is-collapsed', graphHidden);
+            graphWrap.style.display = graphHidden ? 'none' : '';
             graphToggleBtn.innerHTML = graphHidden
-                ? '<span lang="en">Show</span><span lang="gr">Εμφάνιση</span>'
-                : '<span lang="en">Hide</span><span lang="gr">Κρύψε</span>';
+                ? '<span lang="en">Show graph</span><span lang="gr">Εμφάνιση γραφήματος</span>'
+                : '<span lang="en">Hide graph</span><span lang="gr">Απόκρυψη γραφήματος</span>';
         }
 
         function refitZoomables() {
@@ -579,14 +566,12 @@ function buildBasicAlgorithmCards() {
             path.classList.add('rg-edge', 'uncolored');
             path.style.cursor = 'pointer';
             path.dataset.sourceCol = p.sourceCol;
-            path.dataset.destCol = p.destCol;
             path.dataset.packetId = p.id;
             svgEl.appendChild(path);
             edgePathByPacketId[p.id] = path;
         });
         const pathLabelEls = {};
         const kCircleByCol = {};
-        const mCircleByCol = {};
         for (let c = 1; c <= n; c++) {
             const y = 20 + (c - 1) * spacing + spacing / 2;
             const circleL = document.createElementNS(ns, 'circle');
@@ -609,9 +594,7 @@ function buildBasicAlgorithmCards() {
             const circleR = document.createElementNS(ns, 'circle');
             circleR.setAttribute('cx', rightX); circleR.setAttribute('cy', y); circleR.setAttribute('r', 6);
             circleR.setAttribute('fill', '#2255c0');
-            circleR.style.cursor = 'pointer';
             svgEl.appendChild(circleR);
-            mCircleByCol[c] = circleR;
             const labelR = document.createElementNS(ns, 'text');
             labelR.setAttribute('x', rightX + 14); labelR.setAttribute('y', y + 4);
             labelR.classList.add('rg-node-label');
@@ -640,14 +623,6 @@ function buildBasicAlgorithmCards() {
             Object.keys(edgePathByPacketId).forEach(function (pid) {
                 const el = edgePathByPacketId[pid];
                 const match = parseInt(el.dataset.sourceCol) === c;
-                el.classList.toggle('highlighted', match);
-                el.classList.toggle('faded', !match);
-            });
-        }
-        function highlightDestColumn(c) {
-            Object.keys(edgePathByPacketId).forEach(function (pid) {
-                const el = edgePathByPacketId[pid];
-                const match = parseInt(el.dataset.destCol) === c;
                 el.classList.toggle('highlighted', match);
                 el.classList.toggle('faded', !match);
             });
@@ -688,8 +663,6 @@ function buildBasicAlgorithmCards() {
             colHeaderEls[c].addEventListener('mouseleave', clearHighlight);
             kCircleByCol[c].addEventListener('mouseenter', function () { highlightColumn(c); });
             kCircleByCol[c].addEventListener('mouseleave', clearHighlight);
-            mCircleByCol[c].addEventListener('mouseenter', function () { highlightDestColumn(c); });
-            mCircleByCol[c].addEventListener('mouseleave', clearHighlight);
         }
         packets.forEach(function (p) {
             const td = tdByPacketId[p.id];
@@ -820,7 +793,7 @@ function buildBasicAlgorithmCards() {
             const desc = document.createElement('p');
             desc.className = 'substep-explain';
             desc.innerHTML =
-                '<span lang="en">With the coloring complete, we <span class="glossary-term" data-term="greedy">greedily</span> rearrange the packets within each column: those with ' + colorWordFor('en', 1) + ' go to row 1, ' + colorWordFor('en', 2) + ' to row 2, and so on. Phase 1 finishes in at most &radic;N&minus;1 = ' + (n) + '&minus;1 = ' + (n - 1) + ' steps.</span>' +
+                '<span lang="en">With the coloring complete, we <span class="glossary-term" data-term="greedy">greedily</span> move the packets within each column: those with ' + colorWordFor('en', 1) + ' go to row 1, ' + colorWordFor('en', 2) + ' to row 2, and so on. Phase 1 finishes in at most &radic;N&minus;1 = ' + (n) + '&minus;1 = ' + (n - 1) + ' steps.</span>' +
                 '<span lang="gr">Με τον χρωματισμό έτοιμο, κάνουμε <span class="glossary-term" data-term="greedy">άπληστη</span> μετακίνηση των πακέτων ανά στήλη: αυτά με ' + colorWordFor('gr', 1) + ' στη γραμμή 1, ' + colorWordFor('gr', 2) + ' στη γραμμή 2 και ούτω καθ&rsquo; εξής. Η Φάση 1 ολοκληρώνεται μετά από το πολύ &radic;N&minus;1 = ' + (n) + '&minus;1 = ' + (n - 1) + ' βήματα.</span>';
             body.appendChild(desc);
 
@@ -914,61 +887,6 @@ function buildBasicAlgorithmCards() {
             });
         });
         return positions;
-    }
-
-    function buildBasicAnimationConfig() {
-        const p1 = state.afterP1Steps || 0;
-        const p2 = state.afterP2Steps || 0;
-        const p3 = state._p3MaxSteps || 0;
-
-        const sourcePositions = {};
-        packets.forEach(function (p) { sourcePositions[p.sourceRow + ',' + p.sourceCol] = [p]; });
-
-        function dirP2(p, r, c) {
-            if (p.destCol === c) return null;
-            return p.destCol > c ? { arrow: '\u2192' } : { arrow: '\u2190' };
-        }
-        function dirP3(p, r) {
-            if (p.destRow === r) return null;
-            return p.destRow > r ? { arrow: '\u2193' } : { arrow: '\u2191' };
-        }
-        function frame(label, step, offline, positionsFn, opts) {
-            return {
-                label: label, step: step, offline: !!offline,
-                draw: function (slot) { drawSimpleGrid(slot, positionsFn(), colors, n, opts); }
-            };
-        }
-
-        const frames = [];
-        frames.push(frame(animFrameLabel('Αρχικό Πλέγμα', 'Initial Mesh'), 0, true,
-            function () { return sourcePositions; }, { plain: true }));
-        frames.push(frame(animFrameLabel('Χρωματισμός', 'Coloring'), 0, true,
-            function () { return sourcePositions; }, { getDirection: rearrangeDirection }));
-
-        let acc = 0;
-        for (let t = 1; t <= p1; t++) {
-            acc++;
-            (function (step, total) {
-                frames.push(frame(animPhaseLabel(1, step), total, false,
-                    function () { return rearrangePositionsAtStep(step); }, { getDirection: rearrangeDirection }));
-            })(t, acc);
-        }
-        for (let t = 1; t <= p2; t++) {
-            acc++;
-            (function (step, total) {
-                frames.push(frame(animPhaseLabel(2, step), total, false,
-                    function () { return state._p2PositionsAtStep(step); }, { getDirection: dirP2 }));
-            })(t, acc);
-        }
-        for (let t = 1; t <= p3; t++) {
-            acc++;
-            (function (step, total) {
-                frames.push(frame(animPhaseLabel(3, step), total, false,
-                    function () { return state._p3PositionsAtStep(step); }, { getDirection: dirP3 }));
-            })(t, acc);
-        }
-
-        return { frames: frames, totalSteps: p1 + p2 + p3 };
     }
 
     function renderRearrangeResult(body) {
@@ -1119,7 +1037,6 @@ function buildBasicAlgorithmCards() {
             }
             state.afterP2 = positionsAtStep(maxSteps);
             state.afterP2Steps = maxSteps;
-            state._p2PositionsAtStep = positionsAtStep;
 
             const meshSlot = document.createElement('div');
             meshSlot.style.marginTop = '12px';
@@ -1216,7 +1133,6 @@ function buildBasicAlgorithmCards() {
                 maxSteps = Math.max(maxSteps, res.steps);
             });
             phase3MaxSteps = maxSteps;
-            state._p3MaxSteps = maxSteps;
 
             function positionsAtStep(stepIdx) {
                 const positions = {};
@@ -1230,7 +1146,6 @@ function buildBasicAlgorithmCards() {
                 });
                 return positions;
             }
-            state._p3PositionsAtStep = positionsAtStep;
 
             const meshSlot = document.createElement('div');
             meshSlot.style.marginTop = '12px';
@@ -1288,8 +1203,6 @@ function buildBasicAlgorithmCards() {
                     '<div class="result-stat"><div class="num">' + 3*(n-1) + '</div><div class="label">' + formatBound('basic', n) + '</div></div>' +
                     '</div>';
                 body.appendChild(resultHolder);
-
-                appendAnimationLauncher(body, buildBasicAnimationConfig);
 
                 if (n % 2 === 0) {
                     const knBtn = document.createElement('button');
@@ -1384,12 +1297,10 @@ function drawSimpleGrid(container, positions, colors, n, options) {
                 const badgeLine = document.createElement('div');
                 badgeLine.style.marginBottom = '2px';
                 const badge = document.createElement('span');
-                badge.className = 'packet-badge' + (options.plain ? '' : ' colored');
+                badge.className = 'packet-badge colored';
                 badge.textContent = p.destRow + ',' + p.destCol;
-                if (!options.plain) {
-                    badge.style.borderColor = colors[p.color - 1];
-                    badge.style.color = colors[p.color - 1];
-                }
+                badge.style.borderColor = colors[p.color - 1];
+                badge.style.color = colors[p.color - 1];
                 if (options.getDirection) {
                     const dir = options.getDirection(p, r, c);
                     if (dir) {
@@ -1410,8 +1321,8 @@ function drawSimpleGrid(container, positions, colors, n, options) {
                     let extra = options.onHover(p, r, c);
                     if (list.length > 1) {
                         extra += isGrLang()
-                            ? ('<br><em>+' + (list.length - 1) + ' ακόμα πακέτο(α) σε αυτό το κελί</em>')
-                            : ('<br><em>+' + (list.length - 1) + ' more packet(s) at this cell</em>');
+                            ? ('<br><em>+' + (list.length - 1) + ' ακόμα πακέτο(α) σε αυτόν τον επεξεργαστή</em>')
+                            : ('<br><em>+' + (list.length - 1) + ' more packet(s) at this processor</em>');
                     }
                     if (extra) showTooltip(e.clientX, e.clientY, extra);
                 });

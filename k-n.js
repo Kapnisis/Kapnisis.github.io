@@ -338,7 +338,6 @@ function knDrawBipartite(container, nodesLeft, nodesRight, edges, caption) {
         l.setAttribute('text-anchor', 'end'); l.classList.add('rg-node-label');
         l.textContent = nd.label;
         svg.appendChild(l);
-        knBindBipartiteNodeHover(svg, [c, l], 'l', i);
         const sub = document.createElementNS(ns, 'text');
         sub.setAttribute('x', leftX - 2); sub.setAttribute('y', y - 8);
         sub.setAttribute('text-anchor', 'end'); sub.classList.add('rg-path-label');
@@ -356,7 +355,6 @@ function knDrawBipartite(container, nodesLeft, nodesRight, edges, caption) {
         l.classList.add('rg-node-label');
         l.textContent = nd.label;
         svg.appendChild(l);
-        knBindBipartiteNodeHover(svg, [c, l], 'r', i);
         const sub = document.createElementNS(ns, 'text');
         sub.setAttribute('x', rightX + 2); sub.setAttribute('y', y - 8);
         sub.classList.add('rg-path-label');
@@ -374,24 +372,6 @@ function knDrawBipartite(container, nodesLeft, nodesRight, edges, caption) {
 
     container._knBp = { key: cacheKey, svg: svg, edgeLayer: edgeLayer, cap: cap, subLeft: subLeft, subRight: subRight };
     knBipartiteSubLabels(container._knBp, nodesLeft, nodesRight);
-}
-
-function knBindBipartiteNodeHover(svg, els, side, idx) {
-    els.forEach(function (el) {
-        el.style.cursor = 'pointer';
-        el.addEventListener('mouseenter', function () {
-            svg.querySelectorAll('.rg-edge').forEach(function (e) {
-                const match = (side === 'l' ? e.dataset.li : e.dataset.ri) === String(idx);
-                e.classList.toggle('highlighted', match);
-                e.classList.toggle('faded', !match);
-            });
-        });
-        el.addEventListener('mouseleave', function () {
-            svg.querySelectorAll('.rg-edge').forEach(function (e) {
-                e.classList.remove('highlighted', 'faded');
-            });
-        });
-    });
 }
 
 function knBipartiteSubLabels(cache, nodesLeft, nodesRight) {
@@ -421,8 +401,6 @@ function knBipartiteEdges(layer, edges, yOf, leftX, rightX) {
         if (e.stroke) { path.style.stroke = e.stroke; path.style.strokeWidth = e.width || 2; }
         else path.classList.add('uncolored');
         if (e.dash) { path.style.strokeDasharray = '5,4'; path.style.opacity = '0.55'; }
-        path.dataset.li = e.li;
-        path.dataset.ri = e.ri;
         if (e.packetId != null) path.dataset.packetId = e.packetId;
         if (e.title) {
             const t = document.createElementNS(ns, 'title');
@@ -700,79 +678,6 @@ function buildKrizancAlgorithmCards() {
         badge.style.boxShadow = '0 0 0 1px ' + g.color;
     };
 
-    function buildKnAnimationConfig() {
-        const p2traj = knBuildPhase2Traj(packets, n, half);
-        const p4traj = knBuildPhase4Traj(packets, n, half);
-
-        const sourcePositions = {};
-        packets.forEach(function (p) {
-            const key = p.sourceRow + ',' + p.sourceCol;
-            (sourcePositions[key] = sourcePositions[key] || []).push(p);
-        });
-
-        function dirFromTraj(traj, t) {
-            return function (p) {
-                const arr = traj[p.id];
-                if (!arr || t >= arr.length - 1) return null;
-                const cur = arr[t], nxt = arr[t + 1];
-                if (nxt.r > cur.r) return { arrow: '\u2193' };
-                if (nxt.r < cur.r) return { arrow: '\u2191' };
-                if (nxt.c > cur.c) return { arrow: '\u2192' };
-                if (nxt.c < cur.c) return { arrow: '\u2190' };
-                return null;
-            };
-        }
-        function frame(label, step, offline, positionsFn, opts) {
-            return {
-                label: label, step: step, offline: !!offline,
-                draw: function (slot) {
-                    const o = Object.assign({ reserve: 2, onHover: hoverFn }, opts);
-                    knDrawGrid(slot, positionsFn(), n, half, o);
-                }
-            };
-        }
-
-        const frames = [];
-        frames.push(frame(animFrameLabel('Αρχικό Πλέγμα', 'Initial Mesh'), 0, true,
-            function () { return sourcePositions; }, { plain: true, onHover: null }));
-        frames.push(frame(animFrameLabel('Υπολογισμός ISM', 'ISM computation'), 0, true,
-            function () { return sourcePositions; },
-            { tint: true, getDirection: dirFromTraj(p2traj, 0) }));
-
-        let acc = 0;
-        for (let t = 1; t <= half; t++) {
-            acc++;
-            (function (step, total) {
-                frames.push(frame(animPhaseLabel(1, step), total, false,
-                    function () { return knPositionsAt(packets, p2traj, step); },
-                    { tint: true, getDirection: dirFromTraj(p2traj, step) }));
-            })(t, acc);
-        }
-
-        frames.push(frame(animFrameLabel('Διάσπαση σε Μεταθέσεις Α &amp; Β', 'Split into Permutations A &amp; B'), acc, true,
-            function () { return knPositionsAt(packets, p2traj, half); },
-            { tint: true, getStyle: permStyle }));
-
-        for (let t = 1; t <= S2; t++) {
-            acc++;
-            (function (step, total) {
-                frames.push(frame(animPhaseLabel(2, step), total, false,
-                    function () { return knPositionsAt(packets, traj2, step); },
-                    { tint: true, getStyle: permStyle, getDirection: dirFromTraj(traj2, step) }));
-            })(t, acc);
-        }
-        for (let t = 1; t <= half; t++) {
-            acc++;
-            (function (step, total) {
-                frames.push(frame(animPhaseLabel(3, step), total, false,
-                    function () { return knPositionsAt(packets, p4traj, step); },
-                    { tint: true, getDirection: dirFromTraj(p4traj, step) }));
-            })(t, acc);
-        }
-
-        return { frames: frames, totalSteps: half + S2 + half };
-    }
-
     function makeTwoCols(parent, titleGrL, titleEnL, titleGrR, titleEnR) {
         const layout = document.createElement('div');
         layout.className = 'matching-layout';
@@ -797,9 +702,10 @@ function buildKrizancAlgorithmCards() {
             function apply() {
                 grid.style.display = hidden ? 'none' : '';
                 div.classList.toggle('is-collapsed', hidden);
-                toggle.innerHTML = hidden
-                    ? '<span lang="en">Show</span><span lang="gr">Εμφάνιση</span>'
-                    : '<span lang="en">Hide</span><span lang="gr">Κρύψε</span>';
+                toggle.textContent = hidden ? '+' : '\u2212';
+                toggle.title = hidden
+                    ? (isGrLang() ? 'Εμφάνιση' : 'Show')
+                    : (isGrLang() ? 'Απόκρυψη' : 'Hide');
                 requestAnimationFrame(function () { window.dispatchEvent(new Event('resize')); });
             }
             toggle.addEventListener('click', function () { hidden = !hidden; apply(); });
@@ -887,12 +793,6 @@ function knHighlightOddEvenPairs(routeGrid, t, boundaries, permIdx, mode, gridOp
             div.className = 'substep-explain';
             div.innerHTML = bigIdeaHtml;
             body.appendChild(div);
-            const note = document.createElement('div');
-            note.className = 'help-hint-note';
-            note.innerHTML =
-                '<span lang="en">In every phase, press the «?» button for more details.</span>' +
-                '<span lang="gr">Σε κάθε φάση, πάτησε το κουμπί «?» για περισσότερες λεπτομέρειες.</span>';
-            body.appendChild(note);
         }
     };
 
@@ -1140,10 +1040,10 @@ function knHighlightOddEvenPairs(routeGrid, t, boundaries, permIdx, mode, gridOp
     };
 
     const p3Theory =
-        '<span lang="en">After Phase 1, every processor is the <span class="glossary-term" data-term="virtual-source">virtual source</span> of 0, 1 or 2 <span class="glossary-term" data-term="packet">packets</span> and the virtual destination of 0, 1 or 2 packets. So within each sub-mesh we get a <strong><span class="glossary-term" data-term="mapping-22">(2,2)-mapping</span></strong>. This assignment can be completed and split into two <strong>(1,1) <span class="glossary-term" data-term="permutation">permutations</span></strong>, each of which can be routed with queue size 1. The two permutations run in parallel, so overall a queue of size at most 2 is required.<br><br>' +
+        '<span lang="en">After Phase 1, every processor is the <span class="glossary-term" data-term="virtual-source">virtual source</span> of 0, 1 or 2 <span class="glossary-term" data-term="packet">packets</span> and the virtual destination of 0, 1 or 2 packets. So within each sub-mesh we get a <strong><span class="glossary-term" data-term="mapping-22">(2,2)-mapping</span></strong>. The routing of the (2,2)-mapping can be decomposed into two <span class="glossary-term" data-term="permutation">permutation</span>-routing problems, which are routed in parallel without ever using the same edges, with at most 2 packets per processor at every step.<br><br>' +
         'We build a bipartite graph with one red node per processor of the sub-mesh (N/4 in total) as a virtual source and the same number of blue nodes as virtual destinations. For every packet we add an edge from the red node of its virtual source to the blue node of its virtual destination. Since each processor is the virtual source of 0, 1 or 2 packets and the virtual destination of 0, 1 or 2, every node has degree at most 2: we add dummy edges until every node has exactly 2, that is, until the graph is <strong>2-regular</strong>.<br><br>' +
         'A 2-regular graph decomposes into disjoint <strong>cycles</strong>, and since it is bipartite every cycle has even length. Walking each cycle and coloring its edges alternately, no node ends up with two edges of the same color. Each color is therefore a <strong>Permutation</strong>. With packets split into Permutations A and B, we route them in parallel. Permutation A is routed with 3 executions of <span class="glossary-term" data-term="odd-even">odd-even transposition sort</span> (column – row – column) and Permutation B with 3 executions (row – column – row). The permutations complete in 3 &times; &radic;N/2 <span class="glossary-term" data-term="step">steps</span> and run in parallel, since they never use the same edges at any step.</span>' +
-        '<span lang="gr">Μετά την ολοκλήρωση της Φάσης 1, κάθε επεξεργαστής αποτελεί <span class="glossary-term" data-term="virtual-source">virtual source</span> για 0, 1 ή 2 <span class="glossary-term" data-term="packet">πακέτα</span> και virtual destination για 0, 1 ή 2 πακέτα. Επομένως, μέσα σε κάθε υποπλέγμα προκύπτει ένα <strong><span class="glossary-term" data-term="mapping-22">(2,2)-mapping</span></strong>. Η αντιστοίχιση αυτή μπορεί να συμπληρωθεί και να διασπαστεί σε δύο <strong>(1,1) <span class="glossary-term" data-term="permutation">μεταθέσεις</span></strong> (permutations), καθεμία από τις οποίες μπορεί να δρομολογηθεί με ουρά μεγέθους 1. Οι δύο μεταθέσεις εκτελούνται παράλληλα, οπότε συνολικά απαιτείται ουρά μεγέθους το πολύ 2.<br><br>' +
+        '<span lang="gr">Μετά την ολοκλήρωση της Φάσης 1, κάθε επεξεργαστής αποτελεί <span class="glossary-term" data-term="virtual-source">virtual source</span> για 0, 1 ή 2 <span class="glossary-term" data-term="packet">πακέτα</span> και virtual destination για 0, 1 ή 2 πακέτα. Επομένως, μέσα σε κάθε υποπλέγμα προκύπτει ένα <strong><span class="glossary-term" data-term="mapping-22">(2,2)-mapping</span></strong>. Η δρομολόγηση του (2,2)-mapping μπορεί να αποσυντεθεί σε δύο προβλήματα <span class="glossary-term" data-term="permutation">μετάθεσης</span>, τα οποία δρομολογούνται παράλληλα χωρίς να χρησιμοποιούν τις ίδιες ακμές, με το πολύ 2 πακέτα ανά επεξεργαστή σε κάθε βήμα.<br><br>' +
         'Φτιάχνουμε ένα διμερές γράφημα με έναν κόκκινο κόμβο ανά επεξεργαστή του υποπλέγματος (N/4 συνολικά) ως virtual source και ισάριθμους μπλε κόμβους ως virtual destination. Για κάθε πακέτο προσθέτουμε μια ακμή από τον κόκκινο κόμβο του virtual source του προς τον μπλε κόμβο του virtual destination του. Επειδή κάθε επεξεργαστής είναι virtual source για 0, 1 ή 2 πακέτα και virtual destination για 0, 1 ή 2, κάθε κόμβος έχει βαθμό το πολύ 2: συμπληρώνουμε με dummy ακμές μέχρι κάθε κόμβος να έχει ακριβώς 2, δηλαδή μέχρι το γράφημα να γίνει <strong>2-κανονικό</strong>.<br><br>' +
         'Ένα 2-κανονικό γράφημα διασπάται σε ξένους μεταξύ τους <strong>κύκλους</strong>, και επειδή είναι διμερές κάθε κύκλος έχει άρτιο μήκος. Ακολουθώντας κάθε κύκλο και χρωματίζοντας τις ακμές του εναλλάξ, κανένας κόμβος δεν καταλήγει με δύο ακμές ίδιου χρώματος. Κάθε χρώμα είναι έτσι μια <strong>Μετάθεση</strong>. Με τα πακέτα χωρισμένα σε Μεταθέσεις Α και Β, τα δρομολογούμε παράλληλα. Η Μετάθεση Α δρομολογείται με 3 εκτελέσεις του <span class="glossary-term" data-term="odd-even">odd-even transposition sort</span> (στήλη – γραμμή – στήλη) και η Μετάθεση Β με 3 εκτελέσεις (γραμμή – στήλη – γραμμή). Οι μεταθέσεις ολοκληρώνονται σε 3 &times; &radic;N/2 <span class="glossary-term" data-term="step">βήματα</span> και εκτελούνται παράλληλα, αφού δεν χρησιμοποιούν σε κανένα βήμα τις ίδιες ακμές.</span>'
     const p3TheoryCard = {
@@ -1174,20 +1074,20 @@ function knHighlightOddEvenPairs(routeGrid, t, boundaries, permIdx, mode, gridOp
         const schemeGr = isA ? 'στήλη &rarr; γραμμή &rarr; στήλη' : 'γραμμή &rarr; στήλη &rarr; γραμμή';
         const oddEven = '<span class="glossary-term" data-term="odd-even">odd-even transposition sort</span>';
         if (isA) {
-            return '<span lang="en"><strong>' + knPermChip(1) + '</strong> is routed with three executions of ' + oddEven + ', in the order ' + scheme + '. The critical part is the middle (row) sub-phase: if two A-packets end up in the same row wanting the same destination column, they would exceed the queue bound of that processor.<br><br>' +
-                'So in the <strong>first sub-phase we permute the packets within each column</strong>, so that at most one packet per row is destined for any given column. The permutation is computed offline with a <strong>Hall matching</strong>: we build a bipartite graph whose left nodes are the column each packet is currently in and whose right nodes are the column it is heading to (one edge per cell), and color it so that no node has two edges of the same color. The color of a packet is the <strong>intermediate row</strong> it must reach by the end of the first sub-phase.</span>' +
-                '<span lang="gr"><strong>' + knPermChip(1) + '</strong> δρομολογείται με τρεις εκτελέσεις του ' + oddEven + ', με τη σειρά ' + schemeGr + '. Το κρίσιμο σημείο είναι η μεσαία υπο-φάση (γραμμές): αν δύο πακέτα της Α βρεθούν στην ίδια γραμμή θέλοντας την ίδια στήλη προορισμού, θα υπερέβαιναν το όριο ουράς του επεξεργαστή.<br><br>' +
-                'Γι\' αυτό, στην <strong>πρώτη υπο-φάση μεταθέτουμε τα πακέτα εντός κάθε στήλης</strong>, έτσι ώστε το πολύ ένα πακέτο σε κάθε γραμμή να προορίζεται για κάθε στήλη. Η μετάθεση υπολογίζεται offline με ένα <strong>ταίριασμα Hall</strong>: φτιάχνουμε διμερές γράφημα με αριστερά τη στήλη όπου βρίσκεται κάθε πακέτο και δεξιά τη στήλη όπου πηγαίνει (μία ακμή ανά κελί) και το χρωματίζουμε ώστε κανένας κόμβος να μην έχει δύο ακμές ίδιου χρώματος. Το χρώμα κάθε πακέτου είναι η <strong>ενδιάμεση γραμμή</strong> στην οποία πρέπει να βρεθεί στο τέλος της πρώτης υπο-φάσης.</span>';
+            return '<span lang="en"><strong>' + knPermChip(1) + '</strong> is routed with three executions of ' + oddEven + ', in the order ' + scheme + '. In the first execution, we rearrange the packets within each column so that each row ends up with packets having different virtual-destination columns. We then route each row, and finally each column, so that every packet of A reaches its virtual destination.<br><br>' +
+                'The rearrangement of the first execution is computed with a bipartite graph and a <strong>Hall matching</strong>: left nodes are the column each packet is currently in, right nodes are the column of its virtual destination (one edge per processor), colored so that no node has two edges of the same color. The color of each packet is the <strong>intermediate row</strong> it must reach by the end of the first execution.</span>' +
+                '<span lang="gr"><strong>' + knPermChip(1) + '</strong> δρομολογείται με τρεις εκτελέσεις του ' + oddEven + ', με τη σειρά ' + schemeGr + '. Στην πρώτη εκτέλεση, αναδιατάσσουμε τα πακέτα σε κάθε στήλη με τρόπο τέτοιο ώστε σε κάθε γραμμή να βρεθούν πακέτα με διαφορετική στήλη virtual destination. Στη συνέχεια δρομολογούμε κάθε γραμμή και τέλος κάθε στήλη, ώστε όλα τα πακέτα της Α να βρεθούν στο virtual destination τους.<br><br>' +
+                'Ο υπολογισμός της αναδιάταξης της πρώτης εκτέλεσης γίνεται με ένα διμερές γράφημα και <strong>ταίριασμα Hall</strong>: αριστερά η στήλη στην οποία βρίσκεται κάθε πακέτο, δεξιά η στήλη του virtual destination του (μία ακμή ανά επεξεργαστή), χρωματισμένο ώστε κανένας κόμβος να μην έχει δύο ακμές ίδιου χρώματος. Το χρώμα κάθε πακέτου είναι η <strong>ενδιάμεση γραμμή</strong> στην οποία πρέπει να βρεθεί μέχρι το τέλος της πρώτης εκτέλεσης.</span>';
         }
-        return '<span lang="en"><strong>' + knPermChip(2) + '</strong> is the mirror image of A: three executions of ' + oddEven + ', in the order ' + scheme + '. The critical part is the middle (column) sub-phase: if two B-packets end up in the same column wanting the same destination row, they would exceed the queue bound of that processor.<br><br>' +
-            'So in the <strong>first sub-phase we permute the packets within each row</strong>, so that at most one packet per column is destined for any given row. The permutation is computed offline with a <strong>Hall matching</strong>: the left nodes are the row each packet is currently in, the right nodes the row it is heading to (one edge per cell), colored so that no node has two edges of the same color. The color of a packet is the <strong>intermediate column</strong> it must reach by the end of the first sub-phase.</span>' +
-            '<span lang="gr"><strong>' + knPermChip(2) + '</strong> είναι ο καθρέφτης της Α: τρεις εκτελέσεις του ' + oddEven + ', με τη σειρά ' + schemeGr + '. Το κρίσιμο σημείο είναι η μεσαία υπο-φάση (στήλες): αν δύο πακέτα της Β βρεθούν στην ίδια στήλη θέλοντας την ίδια γραμμή προορισμού, θα υπερέβαιναν το όριο ουράς του επεξεργαστή.<br><br>' +
-            'Γι\' αυτό, στην <strong>πρώτη υπο-φάση μεταθέτουμε τα πακέτα εντός κάθε γραμμής</strong>, έτσι ώστε το πολύ ένα πακέτο σε κάθε στήλη να προορίζεται για κάθε γραμμή. Η μετάθεση υπολογίζεται offline με ένα <strong>ταίριασμα Hall</strong>: αριστερά η γραμμή όπου βρίσκεται κάθε πακέτο, δεξιά η γραμμή όπου πηγαίνει (μία ακμή ανά κελί), χρωματισμένο ώστε κανένας κόμβος να μην έχει δύο ακμές ίδιου χρώματος. Το χρώμα κάθε πακέτου είναι η <strong>ενδιάμεση στήλη</strong> στην οποία πρέπει να βρεθεί στο τέλος της πρώτης υπο-φάσης.</span>';
+        return '<span lang="en"><strong>' + knPermChip(2) + '</strong> is routed with three executions of ' + oddEven + ', in the order ' + scheme + '. In the first execution, we rearrange the packets within each row so that each column ends up with packets having different virtual-destination rows. We then route each column, and finally each row, so that every packet of B reaches its virtual destination.<br><br>' +
+            'The rearrangement of the first execution is computed with a bipartite graph and a <strong>Hall matching</strong>: left nodes are the row each packet is currently in, right nodes are the row of its virtual destination (one edge per processor), colored so that no node has two edges of the same color. The color of each packet is the <strong>intermediate column</strong> it must reach by the end of the first execution.</span>' +
+            '<span lang="gr"><strong>' + knPermChip(2) + '</strong> δρομολογείται με τρεις εκτελέσεις του ' + oddEven + ', με τη σειρά ' + schemeGr + '. Στην πρώτη εκτέλεση, αναδιατάσσουμε τα πακέτα σε κάθε γραμμή με τρόπο τέτοιο ώστε σε κάθε στήλη να βρεθούν πακέτα με διαφορετική γραμμή virtual destination. Στη συνέχεια δρομολογούμε κάθε στήλη και τέλος κάθε γραμμή, ώστε όλα τα πακέτα της Β να βρεθούν στο virtual destination τους.<br><br>' +
+            'Ο υπολογισμός της αναδιάταξης της πρώτης εκτέλεσης γίνεται με ένα διμερές γράφημα και <strong>ταίριασμα Hall</strong>: αριστερά η γραμμή στην οποία βρίσκεται κάθε πακέτο, δεξιά η γραμμή του virtual destination του (μία ακμή ανά επεξεργαστή), χρωματισμένο ώστε κανένας κόμβος να μην έχει δύο ακμές ίδιου χρώματος. Το χρώμα κάθε πακέτου είναι η <strong>ενδιάμεση στήλη</strong> στην οποία πρέπει να βρεθεί μέχρι το τέλος της πρώτης εκτέλεσης.</span>';
     }
 
     function knBothIntroText() {
-        return '<span lang="en"><strong>Both permutations together:</strong> in every sub-phase, while ' + knPermChip(1) + ' moves along columns, ' + knPermChip(2) + ' moves along rows and vice versa &mdash; they never share an edge, and every cell holds at most 1 packet of each (queue &le; 2). Each sub-phase lasts as long as the slower of the two.</span>' +
-            '<span lang="gr"><strong>Οι δύο μεταθέσεις μαζί:</strong> σε κάθε υπο-φάση, όσο η ' + knPermChip(1) + ' κινείται σε στήλες, η ' + knPermChip(2) + ' κινείται σε γραμμές και αντίστροφα &mdash; δεν μοιράζονται ποτέ ακμή, και κάθε κελί κρατά το πολύ 1 πακέτο από την καθεμία (ουρά &le; 2). Κάθε υπο-φάση διαρκεί όσο η αργότερη από τις δύο.</span>';
+        return '<span lang="en"><strong>Both permutations together:</strong> in every sub-phase, while ' + knPermChip(1) + ' moves along columns, ' + knPermChip(2) + ' moves along rows and vice versa &mdash; they never share an edge, and every processor holds at most 1 packet of each (queue &le; 2). Each sub-phase lasts as long as the slower of the two.</span>' +
+            '<span lang="gr"><strong>Οι δύο μεταθέσεις μαζί:</strong> σε κάθε υπο-φάση, όσο η ' + knPermChip(1) + ' κινείται σε στήλες, η ' + knPermChip(2) + ' κινείται σε γραμμές και αντίστροφα &mdash; δεν μοιράζονται ποτέ ακμή, και κάθε επεξεργαστής κρατά το πολύ 1 πακέτο από την καθεμία (ουρά &le; 2). Κάθε υπο-φάση διαρκεί όσο η αργότερη από τις δύο.</span>';
     }
 
     function knOddEvenStepText(t, boundaries, mode, permIdx) {
@@ -1283,16 +1183,9 @@ function knHighlightOddEvenPairs(routeGrid, t, boundaries, permIdx, mode, gridOp
             renderBalls();
             prevBtn.disabled = idx <= 0;
             nextBtn.disabled = idx >= steps.length - 1;
-            if (opts.skipTo) {
-                const st = opts.skipTo;
-                skipGroupBtn.innerHTML = st.label;
-                skipGroupBtn.style.display = (idx < st.index) ? 'inline-block' : 'none';
-                skipGroupBtn.onclick = function () { goTo(st.index); };
-            } else {
-                const gr = groupOf(idx);
-                skipGroupBtn.style.display = (idx < gr.end) ? 'inline-block' : 'none';
-                skipGroupBtn.onclick = function () { goTo(gr.end); };
-            }
+            const gr = groupOf(idx);
+            skipGroupBtn.style.display = (idx < gr.end) ? 'inline-block' : 'none';
+            skipGroupBtn.onclick = function () { goTo(gr.end); };
             skipAllBtn.style.display = (idx >= steps.length - 1) ? 'none' : 'inline-block';
 
             if (idx >= steps.length - 1 && typeof opts.onEnd === 'function') opts.onEnd();
@@ -1378,8 +1271,8 @@ function knHighlightOddEvenPairs(routeGrid, t, boundaries, permIdx, mode, gridOp
                 pickNote.className = 'substep-explain';
                 pickNote.style.marginBottom = '12px';
                 pickNote.innerHTML =
-                    '<span lang="en">Goal of Phase 2: solve the routing problem separately in each sub-mesh.</span>' +
-                    '<span lang="gr">Στόχος της Φάσης 2: Λύνουμε το πρόβλημα δρομολόγησης ξεχωριστά σε κάθε sub-mesh.</span>';
+                    '<span lang="en">Goal of Phase 2: solve the routing problem separately in each sub-mesh. Press «?» for more details.</span>' +
+                    '<span lang="gr">Στόχος της Φάσης 2: Λύνουμε το πρόβλημα δρομολόγησης ξεχωριστά σε κάθε sub-mesh. Επίλεξε «?» για περισσότερες λεπτομέρειες.</span>';
                 content.appendChild(pickNote);
 
                 content.appendChild(buildStep3NavRow(null));
@@ -1471,8 +1364,8 @@ function knHighlightOddEvenPairs(routeGrid, t, boundaries, permIdx, mode, gridOp
                 function decompCaption(withColors) {
                     const gr = isGrLang();
                     const base = gr
-                        ? '<span style="color:#c0392b">&#9679;</span> κελί ως virtual source &nbsp;&nbsp; <span style="color:#2255c0">&#9679;</span> κελί ως virtual destination'
-                        : '<span style="color:#c0392b">&#9679;</span> cell as virtual source &nbsp;&nbsp; <span style="color:#2255c0">&#9679;</span> cell as virtual destination';
+                        ? '<span style="color:#c0392b">&#9679;</span> επεξεργαστής ως virtual source &nbsp;&nbsp; <span style="color:#2255c0">&#9679;</span> επεξεργαστής ως virtual destination'
+                        : '<span style="color:#c0392b">&#9679;</span> processor as virtual source &nbsp;&nbsp; <span style="color:#2255c0">&#9679;</span> processor as virtual destination';
                     if (!withColors) return base;
                     return base + '<br>' + knPermChip(1) + ' &nbsp;&nbsp; ' + knPermChip(2) + ' &nbsp;&nbsp; ' +
                         (gr ? '<span style="color:#999;">γκρι = άχρωμη ακόμα</span> (διακεκομμένες = dummy)'
@@ -1530,9 +1423,9 @@ function knHighlightOddEvenPairs(routeGrid, t, boundaries, permIdx, mode, gridOp
 
                 const decompIntro =
                     '<span lang="en"><strong>' + knQuadChip(Q.qi) + ' sub-mesh</strong> (rows ' + rowStart + '-' + rowEnd + ', columns ' + colStart + '-' + colEnd + '): ' + Q.packets.length + ' packets. ' +
-                    'We build a graph with one <span style="color:#c0392b; font-weight:700;">red</span> node per processor of the sub-mesh as a virtual source and one <span style="color:#2255c0; font-weight:700;">blue</span> node per processor as a virtual destination. Then, for every packet we create an edge between its virtual source and its virtual destination. Finally we add empty/dummy edges (dashed) so that the graph becomes <strong>2-regular</strong> (every node has exactly 2 edges). Starting from an uncolored edge we then color edges alternately ' + knPermChip(1) + ' / ' + knPermChip(2) + ', so that no cell ever holds 2 packets of the same permutation.</span>' +
+                    'We build a graph with one <span style="color:#c0392b; font-weight:700;">red</span> node per processor of the sub-mesh as a virtual source and one <span style="color:#2255c0; font-weight:700;">blue</span> node per processor as a virtual destination. Then, for every packet we create an edge between its virtual source and its virtual destination. Finally we add empty/dummy edges (dashed) so that the graph becomes <strong>2-regular</strong> (every node has exactly 2 edges). Starting from an uncolored edge we then color edges alternately ' + knPermChip(1) + ' / ' + knPermChip(2) + ', so that no processor ever holds 2 packets of the same permutation.</span>' +
                     '<span lang="gr"><strong>' + knQuadChip(Q.qi) + ' sub-mesh</strong> (γραμμές ' + rowStart + '-' + rowEnd + ', στήλες ' + colStart + '-' + colEnd + '): ' + Q.packets.length + ' πακέτα. ' +
-                    'Φτιάχνουμε γράφημα με έναν <span style="color:#c0392b; font-weight:700;">Κόκκινο</span> κόμβο ανά επεξεργαστή του sub-mesh ως virtual source και έναν <span style="color:#2255c0; font-weight:700;">Μπλε</span> κόμβο ανά επεξεργαστή ως virtual destination. Έπειτα, για κάθε πακέτο δημιουργούμε ακμή μεταξύ virtual source και virtual destination του. Στο τέλος προσθέτουμε κενές/dummy ακμές (διακεκομμένες) ώστε το γράφημα να γίνει <strong>2-regular</strong> (κάθε κόμβος με ακριβώς 2 ακμές). Ξεκινώντας από μια άχρωμη ακμή χρωματίζουμε εναλλάξ ' + knPermChip(1) + ' / ' + knPermChip(2) + ', ώστε κανένα κελί να μην έχει ποτέ 2 πακέτα της ίδιας μετάθεσης.</span>';
+                    'Φτιάχνουμε γράφημα με έναν <span style="color:#c0392b; font-weight:700;">Κόκκινο</span> κόμβο ανά επεξεργαστή του sub-mesh ως virtual source και έναν <span style="color:#2255c0; font-weight:700;">Μπλε</span> κόμβο ανά επεξεργαστή ως virtual destination. Έπειτα, για κάθε πακέτο δημιουργούμε ακμή μεταξύ virtual source και virtual destination του. Στο τέλος προσθέτουμε κενές/dummy ακμές (διακεκομμένες) ώστε το γράφημα να γίνει <strong>2-regular</strong> (κάθε κόμβος με ακριβώς 2 ακμές). Ξεκινώντας από μια άχρωμη ακμή χρωματίζουμε εναλλάξ ' + knPermChip(1) + ' / ' + knPermChip(2) + ', ώστε κανένας επεξεργαστής να μην έχει ποτέ 2 πακέτα της ίδιας μετάθεσης.</span>';
 
                 const decompSteps = [];
                 decompSteps.push({
@@ -1662,8 +1555,8 @@ function knHighlightOddEvenPairs(routeGrid, t, boundaries, permIdx, mode, gridOp
                         kName: kName, mName: mName,
                         initNodes: '<span lang="en">We build the graph. On the left we create &radic;N/2 red nodes representing the ' + (isA ? 'column' : 'row') + ' each packet is currently in, and on the right &radic;N/2 blue nodes representing the ' + (isA ? 'column' : 'row') + ' it is heading to.</span>' +
                             '<span lang="gr">Δημιουργούμε το γράφημα. Στην αριστερή πλευρά φτιάχνουμε &radic;N/2 κόκκινους κόμβους που αντιπροσωπεύουν τη ' + (isA ? 'στήλη' : 'γραμμή') + ' θέσης των πακέτων και στη δεξιά &radic;N/2 μπλε κόμβους που αντιπροσωπεύουν τη ' + (isA ? 'στήλη' : 'γραμμή') + ' προορισμού όλων των πακέτων.</span>',
-                        initEdges: '<span lang="en">We create the edges: one edge per cell, from the ' + (isA ? 'column' : 'row') + ' it is in to the ' + (isA ? 'column' : 'row') + ' it is heading to (dashed = dummy, empty slot). The graph is &radic;N/2-regular.</span>' +
-                            '<span lang="gr">Δημιουργούμε τις ακμές: μία ακμή ανά κελί, από τη ' + (isA ? 'στήλη' : 'γραμμή') + ' θέσης του προς τη ' + (isA ? 'στήλη' : 'γραμμή') + ' προορισμού του (διακεκομμένη = dummy, κενή θέση). Το γράφημα είναι &radic;N/2-κανονικό.</span>',
+                        initEdges: '<span lang="en">We create the edges: one edge per processor, from the ' + (isA ? 'column' : 'row') + ' it is in to the ' + (isA ? 'column' : 'row') + ' it is heading to (dashed = dummy, empty slot). The graph is &radic;N/2-regular.</span>' +
+                            '<span lang="gr">Δημιουργούμε τις ακμές: μία ακμή ανά επεξεργαστή, από τη ' + (isA ? 'στήλη' : 'γραμμή') + ' θέσης του προς τη ' + (isA ? 'στήλη' : 'γραμμή') + ' προορισμού του (διακεκομμένη = dummy, κενή θέση). Το γράφημα είναι &radic;N/2-κανονικό.</span>',
                         final: '<span lang="en">Coloring is complete for all colors. Each color is the intermediate ' + (isA ? 'row' : 'column') + ' a packet must reach by the end of the first sub-phase.</span>' +
                             '<span lang="gr">Ο χρωματισμός ολοκληρώθηκε για όλα τα χρώματα. Κάθε χρώμα είναι η ενδιάμεση ' + (isA ? 'γραμμή' : 'στήλη') + ' στην οποία πρέπει να βρεθεί το πακέτο στο τέλος της πρώτης υπο-φάσης.</span>'
                     };
@@ -1725,18 +1618,7 @@ function knHighlightOddEvenPairs(routeGrid, t, boundaries, permIdx, mode, gridOp
                         },
                         draw: function () { drawRouteGrid(Q.gS2[g], 0); drawHallGraph(ms.length - 1); }
                     });
-                    let firstOeIdx = steps.length - 1;
-                    for (let i = 0; i < steps.length; i++) {
-                        if (/^oe\d/.test(steps[i].group)) { firstOeIdx = i; break; }
-                    }
-                    return knMakeTimeline(steps, {
-                        onEnd: markRouted,
-                        skipTo: {
-                            index: firstOeIdx,
-                            label: '<span lang="en">Skip to end of coloring</span>' +
-                                '<span lang="gr">Παράλειψη έως το τέλος του χρωματισμού</span>'
-                        }
-                    });
+                    return knMakeTimeline(steps, { onEnd: markRouted });
                 }
 
                 function buildBothTimeline() {
@@ -1958,8 +1840,8 @@ function knHighlightOddEvenPairs(routeGrid, t, boundaries, permIdx, mode, gridOp
             const desc = document.createElement('p');
             desc.className = 'substep-explain';
             desc.innerHTML =
-                '<span lang="en">Goal of Phase 3: move the <span class="glossary-term" data-term="packet">packets</span> within their row from the virtual destination to their final destination. Arrows show the direction of movement for Long packets.</span>' +
-                '<span lang="gr">Στόχος της Φάσης 3: Μετακίνησε τα <span class="glossary-term" data-term="packet">πακέτα</span> στη γραμμή τους από το virtual destination στον τελικό τους προορισμό. Τα βελάκια δείχνουν την κατεύθυνση κίνησης των Long πακέτων.</span>';
+                '<span lang="en">Goal of Phase 3: every <span class="glossary-term" data-term="packet">packet</span> moves within its row from its virtual destination to its final destination in exactly h = ' + half + ' <span class="glossary-term" data-term="step">steps</span>. Arrows show the direction of movement for Long packets.</span>' +
+                '<span lang="gr">Στόχος της Φάσης 3: κάθε <span class="glossary-term" data-term="packet">πακέτο</span> κινείται εντός της γραμμής του από το virtual destination στον τελικό προορισμό σε ακριβώς h = ' + half + ' <span class="glossary-term" data-term="step">βήματα</span>. Τα βελάκια δείχνουν την κατεύθυνση κίνησης των Long πακέτων.</span>';
             body.appendChild(desc);
 
             const vdPositions = {};
@@ -2030,7 +1912,6 @@ function knHighlightOddEvenPairs(routeGrid, t, boundaries, permIdx, mode, gridOp
                     '<br><span lang="en">Phase 1 = ' + half + ', Phase 2 = ' + S2 + ', Phase 3 = ' + half + '</span>' +
                     '<span lang="gr">Φάση 1 = ' + half + ', Φάση 2 = ' + S2 + ', Φάση 3 = ' + half + '</span></div></div>' +
                     '</div>';
-                appendAnimationLauncher(bannerSlot, buildKnAnimationConfig);
                 api.complete();
             });
 
