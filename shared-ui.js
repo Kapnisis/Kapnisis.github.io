@@ -16,6 +16,10 @@ function makeZoomable(contentEl, opts) {
     viewport.appendChild(contentEl);
     contentEl.dataset.zoomified = '1';
 
+    const fixedHost = viewport.parentElement ? viewport.parentElement.closest('[data-zoom-height]') : null;
+    const fixedH = fixedHost ? (parseFloat(fixedHost.dataset.zoomHeight) || 0) : 0;
+    if (fixedH) viewport.style.height = fixedH + 'px';
+
     const excludeEls = Array.from(contentEl.querySelectorAll('input, button, select, textarea, a'));
 
     const panzoom = Panzoom(contentEl, {
@@ -60,14 +64,16 @@ function makeZoomable(contentEl, opts) {
         if (!vw) return;
 
         const narrow = window.innerWidth <= 900;
-        const maxVh = narrow
+        const maxVh = fixedH || (narrow
             ? Math.max(180, Math.min(window.innerHeight * 0.42, 420))
-            : Math.max(200, Math.min(window.innerHeight * 0.68, 760));
+            : Math.max(200, Math.min(window.innerHeight * 0.68, 760)));
 
         const cur = panzoom.getScale() || 1;
         const rect = contentEl.getBoundingClientRect();
-        const cw = rect.width / cur;
-        const ch = rect.height / cur;
+        const natW = (typeof contentEl.offsetWidth === 'number') ? contentEl.offsetWidth : contentEl.clientWidth;
+        const natH = (typeof contentEl.offsetHeight === 'number') ? contentEl.offsetHeight : contentEl.clientHeight;
+        const cw = natW || rect.width / cur;
+        const ch = natH || rect.height / cur;
         if (!cw || !ch) return;
 
         const maxUpscale = (typeof opts.maxUpscale === 'number') ? opts.maxUpscale : 2;
@@ -75,7 +81,7 @@ function makeZoomable(contentEl, opts) {
         const finalScale = Math.max(0.02, Math.min(maxUpscale, (vw - 70) / cw, (maxVh - 70) / ch));
         panzoom.zoom(finalScale, { animate: false, force: true });
 
-        const vh = Math.max(180, Math.min(maxVh, ch * finalScale + 90));
+        const vh = fixedH || Math.max(180, Math.min(maxVh, ch * finalScale + 90));
         viewport.style.height = vh + 'px';
 
         const ox = contentEl.offsetLeft || 0;
@@ -145,32 +151,32 @@ function openTheoryModal(contentHtml) {
 /* Glossary */
 const GLOSSARY_TERMS = {
     'greedy': {
-        en: 'In a <strong>greedy</strong> routing algorithm, all packets move toward their final destination at every step, making a locally optimal decision without examining past or future states.',
-        gr: 'Σε έναν <strong>άπληστο</strong> αλγόριθμο δρομολόγησης, όλα τα πακέτα μετακινούνται σε κάθε βήμα προς τον τελικό προορισμό τους, παίρνοντας μια τοπική και βέλτιστη απόφαση, χωρίς να εξετάζουν προηγούμενες ή επόμενες καταστάσεις.'
+        en: 'In a <strong>greedy</strong> routing algorithm, at every step all packets move &ldquo;greedily&rdquo;, i.e. closer to their final destination, regardless of whether these locally optimal decisions - made without examining the overall state of the mesh before and after - contribute to improving the overall performance, i.e. to an ultimately faster routing of all packets of each routing problem instance. On a linear array of &radic;N processors where every processor holds exactly one packet with a unique destination, the greedy algorithm routes the permutation in at most &radic;N&minus;1 steps without creating queues.',
+        gr: 'Σε έναν <strong>άπληστο</strong> (greedy) αλγόριθμο δρομολόγησης, όλα τα πακέτα μετακινούνται σε κάθε βήμα «άπληστα» δηλαδή πλησιέστερα προς τον τελικό προορισμό τους ανεξάρτητα από το αν οι τοπικά βέλτιστες αποφάσεις - χωρίς εξέταση της συνολικής κατάστασης του πλέγματος πριν και μετά - συντελούν στη βελτίωση της συνολικής απόδοσης δηλαδή στην τελικά γρηγορότερη δρομολόγηση όλων των πακέτων του κάθε στιγμιοτύπου προβλήματος δρομολόγησης. Σε ένα γραμμικό πλέγμα &radic;N επεξεργαστών όπου κάθε επεξεργαστής περιέχει ακριβώς ένα πακέτο με μοναδικό προορισμό, ο άπληστος αλγόριθμος δρομολογεί τη μετάθεση σε το πολύ &radic;N&minus;1 βήματα χωρίς τη δημιουργία ουρών.'
     },
     'offline': {
         en: 'In an <strong>offline</strong> routing, all packet paths are computed in advance, before communication begins. This allows packets to move simultaneously through mesh nodes according to a strict schedule, avoiding conflicts without real-time decision-making.',
         gr: 'Σε μια <strong>offline</strong> δρομολόγηση όλες οι διαδρομές των πακέτων υπολογίζονται εκ των προτέρων, πριν ξεκινήσει η επικοινωνία. Αυτό επιτρέπει στα πακέτα να κινούνται ταυτόχρονα μέσω των κόμβων του πλέγματος βάσει ενός αυστηρού χρονοδιαγράμματος, αποφεύγοντας τις συγκρούσεις χωρίς να χρειάζεται λήψη αποφάσεων σε πραγματικό χρόνο.'
     },
     'hall': {
-        en: 'A bipartite graph with two vertex sets U and V has a perfect matching covering all of U if and only if, for every subset S of U, the neighborhood |N(S)| ≥ |S|. When the graph is <strong>regular</strong> (every vertex has the same degree), Hall\'s theorem guarantees the edges decompose fully into independent perfect matchings. <a href="https://en.wikipedia.org/wiki/Hall%27s_marriage_theorem" target="_blank" rel="noopener">Wikipedia</a>',
-        gr: 'Ένα διμερές γράφημα με δύο σύνολα κορυφών U και V διαθέτει τέλειο ταίριασμα που καλύπτει όλο το U αν και μόνο αν, για κάθε υποσύνολο S του U, |N(S)| ≥ |S|. Στην ειδική περίπτωση που το γράφημα είναι <strong>κανονικό</strong> (κάθε κορυφή έχει τον ίδιο ακριβώς αριθμό γειτόνων), το θεώρημα εγγυάται ότι οι ακμές μπορούν να αναλυθούν πλήρως σε ανεξάρτητα τέλεια ταιριάσματα. <a href="https://en.wikipedia.org/wiki/Hall%27s_marriage_theorem" target="_blank" rel="noopener">Wikipedia</a>'
+        en: 'A bipartite graph with two vertex sets U and V has a perfect matching covering all of U if and only if, for every subset S of U, the neighborhood |N(S)| ≥ |S|. When the graph is <strong>regular</strong> (every vertex has the same degree), Hall\'s theorem guarantees the edges decompose fully into independent perfect matchings.',
+        gr: 'Ένα διμερές γράφημα με δύο σύνολα κορυφών U και V διαθέτει τέλειο ταίριασμα που καλύπτει όλο το U αν και μόνο αν, για κάθε υποσύνολο S του U, |N(S)| ≥ |S|. Στην ειδική περίπτωση που το γράφημα είναι <strong>κανονικό</strong> (κάθε κορυφή έχει τον ίδιο ακριβώς αριθμό γειτόνων), το θεώρημα εγγυάται ότι οι ακμές μπορούν να αναλυθούν πλήρως σε ανεξάρτητα τέλεια ταιριάσματα.'
     },
     'odd-even': {
         en: 'With the <strong>odd-even transposition sort</strong> algorithm, packets are compared in pairs and forwarded towards their destination. On <strong>odd</strong> steps the pairs (1,2), (3,4), … are compared, and on <strong>even</strong> steps the pairs (2,3), (4,5), …. The algorithm routes a (1,1) permutation of &radic;N processors in &radic;N steps.',
         gr: 'Με τον αλγόριθμο <strong>odd-even transposition sort</strong> τα πακέτα συγκρίνονται ανά ζεύγη και προωθούνται προς τον προορισμό τους. Στα <strong>περιττά/odd</strong> βήματα του αλγορίθμου συγκρίνονται τα ζεύγη (1,2) (3,4) κ.ο.κ. και στα <strong>ζυγά/even</strong> βήματα τα ζεύγη (2,3) (4,5) κ.ο.κ. Ο αλγόριθμος δρομολογεί μια (1,1) μετάθεση &radic;N επεξεργαστών σε &radic;N βήματα.'
     },
     'step': {
-        en: 'Each packet can move along one edge between processors exactly once in each <strong>step</strong>.',
-        gr: 'Κάθε πακέτο μπορεί να μετακινηθεί πάνω σε μια ακμή μεταξύ επεξεργαστών μια φορά σε κάθε <strong>βήμα</strong>.'
+        en: 'Time advances in discrete <strong>steps</strong> (clock ticks). In each step, every packet can move along one edge between neighboring processors, i.e. be forwarded by one position horizontally or vertically.',
+        gr: 'Ο χρόνος εξελίσσεται σε διακριτά <strong>βήματα</strong> (τικ του ρολογιού). Σε κάθε βήμα, κάθε πακέτο μπορεί να μετακινηθεί πάνω σε μία ακμή μεταξύ γειτονικών επεξεργαστών, δηλαδή να προωθηθεί κατά μία θέση οριζόντια ή κατακόρυφα.'
     },
     'mesh': {
-        en: 'We consider a <strong>mesh</strong> of processors connected by bidirectional edges to their neighbors (left, right, up, down), except those at the boundary — there is no wrap-around. At most 1 packet can be forwarded along any edge per step. A processor, however, may hold more than one packet between steps — that maximum is its queue size and depends on the algorithm.',
-        gr: 'Θεωρούμε <strong>πλέγμα</strong> επεξεργαστών, που συνδέονται με ακμές διπλής κατεύθυνσης με τους γείτονές τους αριστερά, δεξιά, πάνω και κάτω, εκτός αυτών που βρίσκονται στις άκρες (δεν υπάρχει αναδίπλωση). Στις ακμές, σε κάθε βήμα, μπορεί να προωθηθεί το πολύ 1 πακέτο πληροφορίας. Ένας επεξεργαστής όμως μπορεί να κρατά περισσότερα από ένα πακέτα ανάμεσα στα βήματα — το μέγιστο πλήθος τους είναι το μέγεθος της ουράς του και εξαρτάται από τον αλγόριθμο.'
+        en: 'A <strong>mesh</strong> of N processors contains N processors arranged in &radic;N rows numbered 1,2,…,&radic;N and &radic;N columns numbered 1,2,…,&radic;N. Each processor communicates directly with its neighboring processors in the four directions via bidirectional (full-duplex) edges.',
+        gr: 'Ένα <strong>πλέγμα</strong> (mesh) N επεξεργαστών περιέχει N επεξεργαστές οργανωμένους σε &radic;N γραμμές αριθμημένες 1,2,…,&radic;N και &radic;N στήλες αριθμημένες 1,2,…,&radic;N. Κάθε επεξεργαστής επικοινωνεί άμεσα με τους γειτονικούς του επεξεργαστές στις τέσσερις κατευθύνσεις με ακμές διπλής κατεύθυνσης (full-duplex).'
     },
     'packet': {
-        en: 'A <strong>packet</strong> is a message that a processor wants to send to another. The properties relevant to routing are its initial position (a,b) and its destination (c,d). In this application packets are identified by their destination (c,d).',
-        gr: 'Ως <strong>πακέτο</strong> πληροφορίας θεωρούμε ένα μήνυμα που θέλει να στείλει ένας επεξεργαστής σε έναν άλλον. Οι ιδιότητες που μας αφορούν για τη δρομολόγησή του είναι η αρχική του θέση (a,b) και ο προορισμός του (c,d). Τα πακέτα στην εφαρμογή μας αναγνωρίζονται από τον προορισμό τους (c,d).'
+        en: 'A <strong>packet</strong> is a message that one processor wants to send to another. When visualizing instances of routing problems on meshes, packets are denoted by the (row, column) pair of the mesh that indicates their destination processor.',
+        gr: '<strong>Πακέτο</strong> πληροφορίας είναι ένα μήνυμα που θέλει να στείλει ένας επεξεργαστής σε έναν άλλον. Κατά την οπτικοποίηση στιγμιοτύπων προβλημάτων δρομολόγησης σε πλέγματα, τα πακέτα συμβολίζονται με το ζευγάρι (γραμμή, στήλη) του πλέγματος που υποδεικνύει τον επεξεργαστή-προορισμό του.'
     },
     'mapping-22': {
         en: 'A <strong>(2,2)-mapping</strong> is a routing problem in which every processor is the source of at most 2 packets and the destination of at most 2 packets.',
@@ -181,8 +187,8 @@ const GLOSSARY_TERMS = {
         gr: 'Για πακέτο στη θέση (a, b) με προορισμό (c, d), το <strong>Intermediate Sub-Mesh (ISM)</strong> του είναι το μοναδικό sub-mesh που περιέχει τον κόμβο (c, b).'
     },
     'permutation': {
-        en: 'A <strong>permutation</strong> is a routing problem where every processor is the source of at most one packet and the destination of at most one packet — a (1,1) problem. It can be routed with queue size 1.',
-        gr: 'Ως <strong>μετάθεση</strong> εννοούμε ένα πρόβλημα δρομολόγησης όπου κάθε επεξεργαστής είναι αφετηρία το πολύ ενός πακέτου και προορισμός το πολύ ενός πακέτου — δηλαδή ένα (1,1) πρόβλημα. Δρομολογείται με ουρά μεγέθους 1.'
+        en: 'A <strong>permutation</strong> is a routing problem where every processor is the source of exactly 1 packet and the destination of exactly 1 packet.',
+        gr: '<strong>Μετάθεση</strong> είναι ένα πρόβλημα δρομολόγησης όπου κάθε επεξεργαστής είναι πηγή ακριβώς 1 πακέτου και προορισμός ακριβώς 1 πακέτου.'
     },
     'virtual-source': {
         en: 'For a packet at position (a,b) with destination (c,d), the <strong>virtual source</strong> is the position corresponding to (a,b) inside its ISM — same column b, row mapped to the ISM\'s row zone. The packet travels within its column to the virtual source in Phase 1.',
@@ -295,13 +301,13 @@ function formatBound(kind, n) {
     if (kind === 'krizanc') {
         boundValue = 2.5 * n;
         formulaInstance = '2.5&middot;&radic;' + N + ' = ' + boundValue;
-        return '<span lang="en">Number of Steps ' + formulaInstance + '</span>' +
-            '<span lang="gr">Αριθμός Βημάτων ' + formulaInstance + '</span>';
+        return '<span lang="en">Number of steps ' + formulaInstance + '</span>' +
+            '<span lang="gr">Αριθμός βημάτων ' + formulaInstance + '</span>';
     }
     boundValue = 3 * n - 3;
     formulaInstance = '3&middot;&radic;' + N + ' &minus; 3 = ' + boundValue;
-    return '<span lang="en">Theoretical Upper Bound ' + formulaInstance + '</span>' +
-        '<span lang="gr">Θεωρητικό Άνω Φράγμα ' + formulaInstance + '</span>';
+    return '<span lang="en">Theoretical upper bound ' + formulaInstance + '</span>' +
+        '<span lang="gr">Θεωρητικό άνω φράγμα ' + formulaInstance + '</span>';
 }
 
 /* Step sequence */
@@ -316,7 +322,13 @@ function renderStepSequence(hostEl, cards, opts) {
     helpBtn.className = 'step-seq-help-btn';
     helpBtn.title = 'Θεωρία / Theory';
     helpBtn.textContent = '?';
-    cardShell.appendChild(helpBtn);
+    const topRow = document.createElement('div');
+    topRow.className = 'step-seq-top';
+    const topRight = document.createElement('div');
+    topRight.className = 'step-seq-top-right';
+    const topSlot = document.createElement('div');
+    topSlot.className = 'step-seq-top-slot';
+    cardShell.appendChild(topRow);
     const cardBody = document.createElement('div');
     cardBody.className = 'step-seq-card-body';
     cardShell.appendChild(cardBody);
@@ -346,9 +358,12 @@ function renderStepSequence(hostEl, cards, opts) {
     nextBtn.type = 'button';
     nextBtn.className = 'btn-primary step-seq-next';
     nextBtn.innerHTML = '<span lang="en">Next &rarr;</span><span lang="gr">Επόμενο &rarr;</span>';
-    navRow.appendChild(prevBtn);
+    topRow.appendChild(prevBtn);
+    topRight.appendChild(nextBtn);
+    topRight.appendChild(topSlot);
+    topRight.appendChild(helpBtn);
+    topRow.appendChild(topRight);
     navRow.appendChild(dotsWrap);
-    navRow.appendChild(nextBtn);
     hostEl.appendChild(navRow);
 
     let currentIndex = 0;
@@ -369,6 +384,7 @@ function renderStepSequence(hostEl, cards, opts) {
             next: function () { stepDelta(1); },
             prev: function () { stepDelta(-1); },
             goTo: function (i) { goTo(i); },
+            topSlot: topSlot,
             isSkip: !!window.skipTutorials
         };
     }
@@ -410,6 +426,7 @@ function renderStepSequence(hostEl, cards, opts) {
 
     function renderCurrent() {
         cardBody.innerHTML = '';
+        topSlot.innerHTML = '';
         const card = cards[currentIndex];
         helpBtn.style.visibility = card.theory ? 'visible' : 'hidden';
         helpBtn.onclick = function () { openTheoryModal(card.theory); };

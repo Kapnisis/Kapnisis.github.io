@@ -146,39 +146,45 @@ function buildRoutingAnimation(hostEl, config) {
 }
 
 /* Animation launcher */
-function appendAnimationLauncher(body, getConfig) {
-    const wrap = document.createElement('div');
-    wrap.className = 'anim-launcher';
-    body.appendChild(wrap);
+function openAnimationModal(getConfig) {
+    const overlay = document.createElement('div');
+    overlay.className = 'theory-modal-overlay';
+    const modal = document.createElement('div');
+    modal.className = 'anim-modal';
+    const closeBtn = document.createElement('button');
+    closeBtn.type = 'button';
+    closeBtn.className = 'theory-modal-close';
+    closeBtn.innerHTML = '&times;';
+    modal.appendChild(closeBtn);
+    const host = document.createElement('div');
+    modal.appendChild(host);
+    overlay.appendChild(modal);
+    document.body.appendChild(overlay);
 
+    const zoomObserver = new MutationObserver(function () {
+        host.querySelectorAll('table:not([data-zoomified])').forEach(function (t) { makeZoomable(t); });
+    });
+    zoomObserver.observe(host, { childList: true, subtree: true });
+
+    const ctrl = buildRoutingAnimation(host, getConfig());
+
+    function close() {
+        if (ctrl) ctrl.stop();
+        zoomObserver.disconnect();
+        overlay.remove();
+    }
+    closeBtn.addEventListener('click', close);
+    overlay.addEventListener('click', function (e) { if (e.target === overlay) close(); });
+}
+
+function appendAnimationLauncher(parent, getConfig) {
     const btn = document.createElement('button');
     btn.type = 'button';
     btn.className = 'btn-primary anim-open-btn';
-    wrap.appendChild(btn);
-
-    const slot = document.createElement('div');
-    slot.style.display = 'none';
-    wrap.appendChild(slot);
-
-    let ctrl = null;
-    let open = false;
-
-    function label() {
-        btn.innerHTML = open
-            ? '<span lang="en">Hide the routing</span><span lang="gr">Κρύψε τη δρομολόγηση</span>'
-            : '<span lang="en">&#9654; See the whole routing</span><span lang="gr">&#9654; Δες όλη τη δρομολόγηση</span>';
-    }
-    label();
-
-    btn.addEventListener('click', function () {
-        open = !open;
-        slot.style.display = open ? '' : 'none';
-        if (open && !ctrl) ctrl = buildRoutingAnimation(slot, getConfig());
-        else if (open && ctrl) ctrl.reset();
-        else if (ctrl) ctrl.stop();
-        label();
-        if (open) requestAnimationFrame(function () { window.dispatchEvent(new Event('resize')); });
-    });
+    btn.innerHTML = '<span lang="en">&#9654; See the whole routing</span><span lang="gr">&#9654; Δες όλη τη δρομολόγηση</span>';
+    btn.addEventListener('click', function () { openAnimationModal(getConfig); });
+    parent.appendChild(btn);
+    return btn;
 }
 
 /* Frame labels */

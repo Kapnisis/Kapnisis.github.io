@@ -158,22 +158,22 @@ function oaDescribeColoringStep(ev, label, ctx) {
         case 'select-K':
             return ev.isNewSearch
                 ? (isGrLang()
-                    ? ('Βρίσκουμε έναν Κόκκινο κόμβο που δεν έχει ' + colorLabel(color, colors) + ' ακμή. Επιλέξαμε τον <strong>' + kName(ev.K) + '</strong> κόμβο (' + label + ')')
+                    ? ('Βρίσκουμε έναν κόκκινο κόμβο που δεν έχει ' + colorLabel(color, colors) + ' ακμή. Επιλέξαμε τον <strong>' + kName(ev.K) + '</strong> κόμβο (' + label + ')')
                     : ('We find a red node with no ' + colorLabel(color, colors) + ' edge. We selected node <strong>' + kName(ev.K) + '</strong> (' + label + ')'))
                 : (isGrLang()
-                    ? ('Ο Κόκκινος κόμβος <strong>' + kName(ev.K) + '</strong> (' + label + ') πρέπει τώρα να βρει άλλη ακμή.')
+                    ? ('Ο κόκκινος κόμβος <strong>' + kName(ev.K) + '</strong> (' + label + ') πρέπει τώρα να βρει άλλη ακμή.')
                     : ('Red node <strong>' + kName(ev.K) + '</strong> (' + label + ') must now find a different edge.'));
         case 'try-gray':
             return isGrLang()
-                ? ('Διαλέγουμε μια ελεύθερη/γκρι ακμή του προς Μπλε κόμβο. Επιλέξαμε την ακμή που δείχνει τον <strong>' + mName(ev.edge.M) + '</strong> κόμβο (' + label + '), την οποία χρωματίζουμε προσωρινά κίτρινη.')
+                ? ('Διαλέγουμε μια ελεύθερη/γκρι ακμή του προς μπλε κόμβο. Επιλέξαμε την ακμή που δείχνει τον <strong>' + mName(ev.edge.M) + '</strong> κόμβο (' + label + '), την οποία χρωματίζουμε προσωρινά κίτρινη.')
                 : ('We pick a free/gray edge towards a blue node. We selected the edge pointing to node <strong>' + mName(ev.edge.M) + '</strong> (' + label + '), which we temporarily color yellow.');
         case 'result-free':
             return isGrLang()
-                ? ('Ελέγχουμε αν ο <strong>' + mName(ev.edge.M) + '</strong> Μπλε κόμβος έχει ακμή με ' + colorLabel(color, colors) + '. <strong>Δεν έχει!</strong> Επιτυχές μονοπάτι. Χρωματίζουμε όλες τις κίτρινες ακμές σε ' + colorLabel(color, colors) + ' και όλες τις διακεκομμένες σε γκρι.')
+                ? ('Ελέγχουμε αν ο <strong>' + mName(ev.edge.M) + '</strong> μπλε κόμβος έχει ακμή με ' + colorLabel(color, colors) + '. <strong>Δεν έχει!</strong> Επιτυχές μονοπάτι. Χρωματίζουμε όλες τις κίτρινες ακμές σε ' + colorLabel(color, colors) + ' και όλες τις διακεκομμένες σε γκρι.')
                 : ('We check whether node <strong>' + mName(ev.edge.M) + '</strong> has a ' + colorLabel(color, colors) + ' edge. <strong>It does not!</strong> Successful path. We color all yellow edges ' + colorLabel(color, colors) + ' and all dashed edges gray.');
         case 'result-follow':
             return isGrLang()
-                ? ('Ελέγχουμε αν ο <strong>' + mName(ev.edge.M) + '</strong> Μπλε κόμβος έχει ακμή με ' + colorLabel(color, colors) + '. <strong>Έχει!</strong> Την ακμή <strong>' + kName(ev.edge.K) + '-' + mName(ev.edge.M) + '</strong>. Την ακολουθούμε πίσω στον Κόκκινο <strong>' + kName(ev.edge.K) + '</strong> κόμβο.')
+                ? ('Ελέγχουμε αν ο <strong>' + mName(ev.edge.M) + '</strong> μπλε κόμβος έχει ακμή με ' + colorLabel(color, colors) + '. <strong>Έχει!</strong> Την ακμή <strong>' + kName(ev.edge.K) + '-' + mName(ev.edge.M) + '</strong>. Την ακολουθούμε πίσω στον κόκκινο <strong>' + kName(ev.edge.K) + '</strong> κόμβο.')
                 : ('We check whether node <strong>' + mName(ev.edge.M) + '</strong> has a ' + colorLabel(color, colors) + ' edge. <strong>It does!</strong> The edge <strong>' + kName(ev.edge.K) + '-' + mName(ev.edge.M) + '</strong>. We follow it back to red node <strong>' + kName(ev.edge.K) + '</strong>.');
         case 'backtrack':
             return isGrLang() ? 'Αδιέξοδο — επιστρέφουμε.' : 'Dead end — backtracking.';
@@ -300,13 +300,13 @@ function buildBasicAlgorithmCards() {
     const bigIdeaHtml =
         '<span lang="en">We can route a square <span class="glossary-term" data-term="mesh">mesh</span> (&radic;N rows &times; &radic;N columns) in 3&radic;N&minus;3 <span class="glossary-term" data-term="step">steps</span>, keeping the maximum queue size at every processor = 1, by running our algorithm in 3 phases.<br><br>' +
         'In Phase 1 we rearrange the <span class="glossary-term" data-term="packet">packets</span> within each column so that at most one <span class="glossary-term" data-term="packet">packet</span> in each row is destined for each column. In Phase 2 we route every <span class="glossary-term" data-term="packet">packet</span> within its row to its destination column. In Phase 3 we route every <span class="glossary-term" data-term="packet">packet</span> within its column to its destination row (i.e. to its final destination).<br><br>' +
-        'The hard part — and the only <span class="glossary-term" data-term="offline">offline</span> step — is finding the Phase 1 column rearrangement such that at most one <span class="glossary-term" data-term="packet">packet</span> per row is destined for any given column. Once that is done, each phase is easy to implement in &radic;N&minus;1 <span class="glossary-term" data-term="step">steps</span> (queue&nbsp;=&nbsp;1) using a <span class="glossary-term" data-term="greedy">greedy</span> algorithm to route <span class="glossary-term" data-term="packet">packets</span> within each row or column.</span>' +
-        '<span lang="gr">Μπορούμε να δρομολογήσουμε ένα τετραγωνικό <span class="glossary-term" data-term="mesh">πλέγμα</span> (&radic;Ν γραμμές &times; &radic;Ν στήλες) σε 3&radic;Ν&minus;3 <span class="glossary-term" data-term="step">βήματα</span>, διατηρώντας σε κάθε επεξεργαστή μέγιστο μέγεθος ουράς = 1, εκτελώντας τον αλγόριθμό μας σε 3 φάσεις.<br><br>' +
+        'The way the <span class="glossary-term" data-term="packet">packets</span> are rearranged within each column during Phase 1 is computed <span class="glossary-term" data-term="offline">offline</span> and guarantees that no queues form during the <span class="glossary-term" data-term="greedy">greedy</span> routing of Phases 2 and 3.</span>' +
+        '<span lang="gr">Μπορούμε να δρομολογήσουμε ένα τετραγωνικό <span class="glossary-term" data-term="mesh">πλέγμα</span> (&radic;N γραμμές &times; &radic;N στήλες) σε 3&radic;N&minus;3 <span class="glossary-term" data-term="step">βήματα</span>, διατηρώντας σε κάθε επεξεργαστή μέγιστο μέγεθος ουράς = 1, εκτελώντας τον αλγόριθμό μας σε 3 φάσεις.<br><br>' +
         'Στη Φάση 1, αναδιατάσσουμε τα <span class="glossary-term" data-term="packet">πακέτα</span> εντός κάθε στήλης, έτσι ώστε το πολύ ένα <span class="glossary-term" data-term="packet">πακέτο</span> σε κάθε γραμμή να προορίζεται για κάθε στήλη. Στη Φάση 2, δρομολογούμε κάθε <span class="glossary-term" data-term="packet">πακέτο</span> εντός της γραμμής του προς τη σωστή στήλη. Στη Φάση 3, δρομολογούμε κάθε <span class="glossary-term" data-term="packet">πακέτο</span> εντός της στήλης του προς τη σωστή γραμμή (δηλαδή, στον προορισμό του).<br><br>' +
-        'Το δύσκολο κομμάτι — και το μόνο <span class="glossary-term" data-term="offline">offline</span> τμήμα — είναι να βρεθεί ο τρόπος αναδιάταξης των <span class="glossary-term" data-term="packet">πακέτων</span> εντός κάθε στήλης κατά τη Φάση 1, ώστε να υπάρχει το πολύ ένα <span class="glossary-term" data-term="packet">πακέτο</span> σε κάθε γραμμή που να προορίζεται για οποιαδήποτε στήλη. Μόλις γίνει αυτό, κάθε φάση υλοποιείται εύκολα σε &radic;Ν&minus;1 <span class="glossary-term" data-term="step">βήματα</span> (ουρά&nbsp;=&nbsp;1), χρησιμοποιώντας τον <span class="glossary-term" data-term="greedy">άπληστο</span> αλγόριθμο για τη δρομολόγηση των <span class="glossary-term" data-term="packet">πακέτων</span> εντός κάθε γραμμής ή στήλης.</span>';
+        'Ο τρόπος αναδιάταξης των <span class="glossary-term" data-term="packet">πακέτων</span> εντός κάθε στήλης κατά τη Φάση 1 υπολογίζεται <span class="glossary-term" data-term="offline">offline</span> και εξασφαλίζει τη μη δημιουργία ουρών κατά την <span class="glossary-term" data-term="greedy">άπληστη</span> δρομολόγηση των φάσεων 2 και 3.</span>';
 
     const bigIdeaCard = {
-        id: 'p1-bigidea', navLabel: '<span lang="en">Big Idea</span><span lang="gr">Βασική Ιδέα</span>', kind: 'action', theory: null, interactive: false,
+        id: 'p1-bigidea', navLabel: '<span lang="en">Big idea</span><span lang="gr">Βασική ιδέα</span>', kind: 'action', theory: null, interactive: false,
         render: function (body) {
             const div = document.createElement('div');
             div.className = 'substep-explain';
@@ -323,15 +323,18 @@ function buildBasicAlgorithmCards() {
 
     const hallTheory =
         '<span lang="en"><strong>The goal of Phase 1</strong> is to rearrange the packets within each column so that at most one packet per row is destined for any given column — which guarantees no two packets will conflict during the greedy routing of Phases 2 and 3.<br><br>' +
-        'To achieve each rearrangement, we color each row of the mesh with a different color (Color 1 = Row 1, etc.) and color the packets in each column so that packets of the same color have a different destination column.<br><br>' +
-        'We then build a bipartite graph: on one side &radic;N red nodes (K1…K&radic;N) representing each source column, on the other &radic;N blue nodes (M1…M&radic;N) representing each destination column. We connect them with edges representing packets: a packet at (a,b) with destination (c,d) gives edge K<sub>b</sub>&ndash;M<sub>d</sub>.<br><br>' +
+        'To achieve each rearrangement, we color each row of the mesh with a different color (Color 1 = row 1, etc.) and color the packets in each column so that packets of the same color have a different destination column.<br><br>' +
+        'We build a bipartite graph: on one side &radic;N red nodes (K1…K&radic;N) representing each source column, on the other &radic;N blue nodes (M1…M&radic;N) representing each destination column. We connect them with edges representing packets: a packet at (a,b) with destination (c,d) gives edge K<sub>b</sub>&ndash;M<sub>d</sub>.<br><br>' +
         'We then color each edge so that no node K has two edges of the same color (so each column\'s packets end up in different rows after rearrangement) and no node M has two edges of the same color (so each row ends up with different destination columns after rearrangement).<br><br>' +
-        'This is achieved using <span class="glossary-term" data-term="hall">Hall\'s Matching Theorem</span>, since our graph is bipartite and &radic;N-regular.</span>' +
+        'This is achieved using <span class="glossary-term" data-term="hall">Hall\'s matching theorem</span>, since our graph is bipartite and &radic;N-regular.<br><br>' +
+        'Once the coloring is complete, the packets are rearranged within each column with the <span class="glossary-term" data-term="greedy">greedy</span> algorithm in at most &radic;N&minus;1 <span class="glossary-term" data-term="step">steps</span>.</span>' +
         '<span lang="gr"><strong>Ο στόχος της Φάσης 1</strong> είναι να αναδιατάξουμε τα πακέτα εντός κάθε στήλης, έτσι ώστε το πολύ ένα πακέτο σε κάθε γραμμή να προορίζεται για κάθε στήλη — κάτι που εξασφαλίζει ότι δεν θα δημιουργηθούν ουρές κατά την εκτέλεση του άπληστου αλγορίθμου στις Φάσεις 2 και 3.<br><br>' +
-        'Για να επιτύχουμε κάθε αναδιάταξη, χαρακτηρίζουμε κάθε γραμμή του πλέγματος με διαφορετικό χρώμα (Χρώμα 1 αντιστοιχεί στη Γραμμή 1 κ.ο.κ.) και χρωματίζουμε τα πακέτα σε κάθε στήλη ώστε τα πακέτα ίδιου χρώματος να έχουν προορισμό διαφορετική στήλη.<br><br>' +
-        'Στη συνέχεια, δημιουργούμε ένα διμερές γράφημα: στη μια πλευρά &radic;N κόκκινους κόμβους (K1…K&radic;N) που αντιπροσωπεύουν κάθε στήλη θέσης και στην άλλη &radic;N μπλε κόμβους (M1…M&radic;N) που αντιπροσωπεύουν κάθε στήλη προορισμού. Ενώνουμε τους κόμβους με ακμές που αντιπροσωπεύουν τα πακέτα. Ένα πακέτο που βρίσκεται στη θέση (a,b) και έχει προορισμό (c,d) δίνει την ακμή K<sub>b</sub>&ndash;M<sub>d</sub>.<br><br>' +
+        'Για να επιτύχουμε κάθε αναδιάταξη, χαρακτηρίζουμε κάθε γραμμή του πλέγματος με διαφορετικό χρώμα (Χρώμα 1 αντιστοιχεί στη γραμμή 1 κ.ο.κ.) και χρωματίζουμε τα πακέτα σε κάθε στήλη ώστε τα πακέτα ίδιου χρώματος να έχουν προορισμό διαφορετική στήλη.<br><br>' +
+        'Δημιουργούμε ένα διμερές γράφημα: στη μια πλευρά με &radic;N κόκκινους κόμβους (K1…K&radic;N) που αντιπροσωπεύουν κάθε στήλη θέσης και στην άλλη &radic;N μπλε κόμβους (M1…M&radic;N) που αντιπροσωπεύουν κάθε στήλη προορισμού. Ενώνουμε τους κόμβους με ακμές που αντιπροσωπεύουν τα πακέτα. Ένα πακέτο που βρίσκεται στη θέση (a,b) και έχει προορισμό (c,d) δίνει την ακμή K<sub>b</sub>&ndash;M<sub>d</sub>.<br><br>' +
         'Χρωματίζουμε κάθε ακμή έτσι ώστε κανένας κόμβος Κ να μην έχει ακμές ίδιου χρώματος (άρα τα πακέτα κάθε στήλης θα έχουν διαφορετική γραμμή μετά τη μετάθεση) και κανένας κόμβος Μ να μην έχει ακμές ίδιου χρώματος (άρα μετά τη μετάθεση κάθε γραμμή έχει διαφορετικές στήλες προορισμού).<br><br>' +
-        'Αυτό επιτυγχάνεται με τη βοήθεια του <span class="glossary-term" data-term="hall">Θεωρήματος Ταιριάσματος του Hall</span>, αφού το γράφημά μας είναι διμερές και &radic;N-κανονικό.</span>';
+        'Αυτό επιτυγχάνεται με τη βοήθεια του <span class="glossary-term" data-term="hall">θεωρήματος ταιριάσματος του Hall</span>, αφού το γράφημά μας είναι διμερές και &radic;N-κανονικό.<br><br>' +
+        'Μετά την ολοκλήρωση του χρωματισμού, τα πακέτα αναδιατάσσονται σε κάθε στήλη με τον <span class="glossary-term" data-term="greedy">άπληστο</span> αλγόριθμο σε το πολύ &radic;N&minus;1 <span class="glossary-term" data-term="step">βήματα</span>.</span>' +
+        '<div class="algo-source"><span lang="en">Source:</span><span lang="gr">Πηγή:</span> F. T. Leighton, Introduction to Parallel Algorithms and Architectures, San Mateo, CA: Morgan Kaufmann Publishers, 1992.</div>';
 
     const coloringCard = {
         id: 'p1-coloring', navLabel: '<span lang="en">Phase 1: Coloring</span><span lang="gr">Φάση 1: Χρωματισμός</span>', kind: 'action', theory: hallTheory, interactive: true,
@@ -940,7 +943,7 @@ function buildBasicAlgorithmCards() {
         }
 
         const frames = [];
-        frames.push(frame(animFrameLabel('Αρχικό Πλέγμα', 'Initial Mesh'), 0, true,
+        frames.push(frame(animFrameLabel('Αρχικό πλέγμα', 'Initial mesh'), 0, true,
             function () { return sourcePositions; }, { plain: true }));
         frames.push(frame(animFrameLabel('Χρωματισμός', 'Coloring'), 0, true,
             function () { return sourcePositions; }, { getDirection: rearrangeDirection }));
@@ -1067,9 +1070,9 @@ function buildBasicAlgorithmCards() {
     }
 
     const phase2Theory =
-        '<span lang="en">The Phase 1 rearrangement guarantees that no row contains two <span class="glossary-term" data-term="packet">packets</span> destined for the same column — so a <span class="glossary-term" data-term="greedy">greedy</span> algorithm can route each row independently in at most &radic;N&minus;1 <span class="glossary-term" data-term="step">steps</span>, with no conflicts.<br><br>' +
+        '<span lang="en">The Phase 1 rearrangement guarantees that no row contains two <span class="glossary-term" data-term="packet">packets</span> destined for the same column — so a <span class="glossary-term" data-term="greedy">greedy</span> algorithm can route each row independently in at most &radic;N&minus;1 <span class="glossary-term" data-term="step">steps</span>, with no queues.<br><br>' +
         'All rows run their <span class="glossary-term" data-term="greedy">greedy</span> routines in parallel. Phase 2 ends when every packet is in its destination column.</span>' +
-        '<span lang="gr">Η αναδιάταξη της Φάσης 1 εξασφαλίζει ότι καμία γραμμή δεν περιέχει δύο <span class="glossary-term" data-term="packet">πακέτα</span> με τον ίδιο στόχο στήλης — άρα ένας <span class="glossary-term" data-term="greedy">άπληστος</span> αλγόριθμος μπορεί να δρομολογήσει κάθε γραμμή ανεξάρτητα σε το πολύ &radic;N&minus;1 <span class="glossary-term" data-term="step">βήματα</span>, χωρίς συγκρούσεις.<br><br>' +
+        '<span lang="gr">Η αναδιάταξη της Φάσης 1 εξασφαλίζει ότι καμία γραμμή δεν περιέχει δύο <span class="glossary-term" data-term="packet">πακέτα</span> με τον ίδιο στόχο στήλης — άρα ένας <span class="glossary-term" data-term="greedy">άπληστος</span> αλγόριθμος μπορεί να δρομολογήσει κάθε γραμμή ανεξάρτητα σε το πολύ &radic;N&minus;1 <span class="glossary-term" data-term="step">βήματα</span>, χωρίς ουρές.<br><br>' +
         'Όλες οι γραμμές τρέχουν τους <span class="glossary-term" data-term="greedy">άπληστους</span> αλγορίθμους τους παράλληλα. Η Φάση 2 τελειώνει όταν κάθε πακέτο βρεθεί στη στήλη προορισμού του.</span>';
 
     const phase2ActionCard = {
@@ -1283,21 +1286,23 @@ function buildBasicAlgorithmCards() {
                     '<span lang="en">The algorithm terminates. The mesh has been routed.</span>' +
                     '<span lang="gr">Ο αλγόριθμος τερματίζει, το πλέγμα δρομολογήθηκε.</span></div></div>' +
                     '<div class="result-stat"><div class="num">' + (p1+p2+p3) + '</div><div class="label">' +
-                    '<span lang="en">Actual Steps (Phase 1=' + p1 + ', Phase 2=' + p2 + ', Phase 3=' + p3 + ')</span>' +
-                    '<span lang="gr">Πραγματικά Βήματα (Φάση 1=' + p1 + ', Φάση 2=' + p2 + ', Φάση 3=' + p3 + ')</span></div></div>' +
+                    '<span lang="en">Actual steps (Phase 1=' + p1 + ', Phase 2=' + p2 + ', Phase 3=' + p3 + ')</span>' +
+                    '<span lang="gr">Πραγματικά βήματα (Φάση 1=' + p1 + ', Φάση 2=' + p2 + ', Φάση 3=' + p3 + ')</span></div></div>' +
                     '<div class="result-stat"><div class="num">' + 3*(n-1) + '</div><div class="label">' + formatBound('basic', n) + '</div></div>' +
                     '</div>';
                 body.appendChild(resultHolder);
 
-                appendAnimationLauncher(body, buildBasicAnimationConfig);
+                const resultActions = document.createElement('div');
+                resultActions.className = 'result-actions';
+                resultHolder.querySelector('.result-banner').appendChild(resultActions);
+                appendAnimationLauncher(resultActions, buildBasicAnimationConfig);
 
                 if (n % 2 === 0) {
                     const knBtn = document.createElement('button');
                     knBtn.className = 'btn-primary';
-                    knBtn.style.marginTop = '12px';
                     knBtn.innerHTML =
-                        '<span lang="en">Try the same instance with Krizanc-Narayanan &rarr;</span>' +
-                        '<span lang="gr">Δοκίμασε το ίδιο στιγμιότυπο με τον Αλγόριθμο Krizanc-Narayanan &rarr;</span>';
+                        '<span lang="en">Try the same instance with the other algorithm too</span>' +
+                        '<span lang="gr">Δοκίμασε το ίδιο στιγμιότυπο και με τον άλλο αλγόριθμο</span>';
                     knBtn.addEventListener('click', function () {
                         window._oaTransferToKN = {
                             n: n,
@@ -1317,7 +1322,7 @@ function buildBasicAlgorithmCards() {
                             document.getElementById('startFlowBtn').click();
                         }
                     });
-                    body.appendChild(knBtn);
+                    resultActions.appendChild(knBtn);
                 }
 
                 api.complete();

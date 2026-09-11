@@ -177,6 +177,19 @@
     line-height: 1.5;
 }
 
+/* ══════ Mesh card: reasons for disabled buttons ══════ */
+.mesh-hint {
+    font-size: 12.5px;
+    color: #c0392b;
+    margin-top: 8px;
+    line-height: 1.5;
+}
+.mesh-hint--ok { color: #1e7a3f; }
+.mesh-btn-row .btn-secondary:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
 /* ══════ Step sequence (unified dots/progress-bar flow) ══════ */
 .step-seq-progress {
     height: 5px;
@@ -197,17 +210,34 @@
     background: white;
     border: 1px solid #c9d6ea;
     border-radius: 10px;
-    padding: 22px 24px;
+    padding: 12px 24px 22px;
     min-height: 220px;
     box-sizing: border-box;
     min-width: 0;
     max-width: 100%;
 }
 
+.step-seq-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-bottom: 16px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid #e8edf3;
+}
+.step-seq-top-right {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-left: auto;
+}
+.step-seq-top-slot { display: flex; align-items: center; gap: 10px; }
+.step-seq-top-slot:empty { display: none; }
+
 .step-seq-help-btn {
-    position: absolute;
-    top: 14px;
-    right: 14px;
+    flex: 0 0 auto;
     width: 28px;
     height: 28px;
     border-radius: 50%;
@@ -219,10 +249,10 @@
     cursor: pointer;
     z-index: 5;
 }
-.step-seq-help-btn:hover { background: #eef2f8; }
+.step-seq-help-btn:hover { background: #d9dde3; color: #000; }
 
 .step-seq-card-body {
-    padding-right: 30px;
+    padding-right: 0;
     overflow-x: auto;
     min-width: 0;
 }
@@ -230,7 +260,7 @@
 .step-seq-nav {
     display: flex;
     align-items: center;
-    justify-content: space-between;
+    justify-content: center;
     gap: 14px;
     margin-top: 18px;
     flex-wrap: wrap;
@@ -264,9 +294,16 @@
     cursor: not-allowed;
 }
 
-.step-seq-prev:disabled, .step-seq-next:disabled {
+.step-seq-prev:disabled, .step-seq-next:disabled,
+.kn-subphase-row button:disabled {
     opacity: 0.4;
     cursor: not-allowed;
+}
+.kn-subphase-row button:disabled,
+.kn-subphase-row button:disabled:hover {
+    background-color: #aab4c2;
+    border-color: #aab4c2;
+    color: #fff;
 }
 
 @media (max-width: 700px) {
@@ -275,8 +312,7 @@
 }
 /* ══════ Responsive card layout ══════ */
 @media (max-width: 700px) {
-    .step-seq-card { padding: 14px 12px; }
-    .step-seq-card-body { padding-right: 14px; }
+    .step-seq-card { padding: 10px 12px 14px; }
     .step-seq-nav { margin-top: 12px; gap: 8px; }
     .theory-modal { width: 96%; padding: 18px 16px; }
 }
@@ -382,4 +418,75 @@
     border: 1px solid #c9d6ea;
     font-size: 12.5px;
     color: #2a4a7a;
+}
+
+/* ══════ Responsive: tablets & phones ══════ */
+@media (max-width: 700px) {
+    .zoom-controls {
+        flex-direction: row;
+        bottom: 6px;
+        right: 6px;
+    }
+    .zoom-btn {
+        width: 28px;
+        height: 28px;
+        font-size: 14px;
+    }
+}
+
+@media (max-width: 540px) {
+    .navbar .container-fluid { padding-left: 12px !important; padding-right: 12px !important; }
+    .navbar-brand {
+        font-size: 15px !important;
+        white-space: normal;
+        line-height: 1.3;
+    }
+    .lang-switch { margin-left: 10px !important; }
+}
+
+@media (max-width: 480px) {
+    .step-seq-top { gap: 6px; }
+    .step-seq-top-right { gap: 6px; }
+    .step-seq-top .btn-primary,
+    .step-seq-top .btn-secondary { font-size: 12px; padding: 6px 10px; }
+}
+
+/* ══════ White buttons: hover ══════ */
+.btn-secondary:not(:disabled):hover,
+.zoom-btn:hover {
+    background-color: #d9dde3;
+    border-color: #aab3bf;
+    color: #000;
+}
+.btn-secondary:not(:disabled):not(.disabled):active {
+    background-color: #c9ced6;
+    border-color: #aab3bf;
+    color: #000;
+}
+
+/* ══════ Result banner actions ══════ */
+.result-actions {
+    flex-basis: 100%;
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+/* ══════ Animation window ══════ */
+.anim-modal {
+    position: relative;
+    background: white;
+    width: 94%;
+    max-width: 1100px;
+    max-height: 94vh;
+    overflow-y: auto;
+    border-radius: 10px;
+    padding: 34px 22px 18px;
+    box-shadow: 0 12px 40px rgba(0,0,0,0.25);
+    box-sizing: border-box;
+}
+.anim-modal .anim-panel { margin-top: 0; }
+@media (max-width: 700px) {
+    .anim-modal { width: 98%; padding: 32px 10px 12px; }
 }

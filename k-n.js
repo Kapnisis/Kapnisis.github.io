@@ -100,6 +100,8 @@ function knSplitIntoTwoPermutations(realEdges, m) {
     return { edges: edges, permOfCell: permOfCell, cyclesLog: cyclesLog };
 }
 
+const KN_P2_CHROME = 660;
+
 /* Grid renderer */
 function knDrawGrid(container, positions, n, half, options) {
     options = options || {};
@@ -664,7 +666,7 @@ function buildKrizancAlgorithmCards() {
         const gr = isGrLang();
         let html = hoverFn(p) + '<br>' + (gr ? 'Ομάδα: ' : 'Group: ') + knPermChip(p.permGroup) +
             '<br>' + (gr ? 'Διαδρομή: ' : 'Route: ') + (p.permGroup === 1 ? 'col &rarr; row &rarr; col' : 'row &rarr; col &rarr; row');
-        if (p.permGroup === 1) html += '<br>' + (gr ? 'Ενδιάμεση γραμμή: ' : 'Intermediate row: ') + p.midRow;
+        if (p.permGroup === 1) html += '<br>' + (gr ? 'Γραμμή για την αναδιάταξη: ' : 'Row for the rearrangement: ') + p.midRow;
         else html += '<br>' + (gr ? 'Ενδιάμεση στήλη: ' : 'Intermediate column: ') + p.midCol;
         return html;
     };
@@ -784,12 +786,11 @@ function knHighlightOddEvenPairs(routeGrid, t, boundaries, permIdx, mode, gridOp
 }
 
     const bigIdeaHtml =
-        '<span lang="en">The Krizanc-Narayanan algorithm speeds up routing by splitting the mesh into four sub-meshes of size &radic;N/2 &times; &radic;N/2 and initially moving each packet to the appropriate sub-mesh. This way, instead of solving one large routing problem over the entire mesh, smaller local problems are created that can be solved in parallel. After the first movement each processor holds at most two packets and, inside each sub-mesh, a <span class="glossary-term" data-term="mapping-22">(2,2)-mapping</span> arises that can be split into two separate routing problems solved in parallel. Finally, packets move from the intermediate position to their real destination. This pre-placement of packets limits the hard intermediate routing to half-size meshes and allows parallel processing, resulting in a total time of 2.5&radic;N steps and a queue size of 2 per processor.<br><br>' +
-        'At any time, you can see more details for each phase using the «?» button.</span>' +
-        '<span lang="gr">Ο αλγόριθμος των Krizanc-Narayanan επιταχύνει τη δρομολόγηση χωρίζοντας το πλέγμα σε τέσσερα υποπλέγματα &radic;N/2 &times; &radic;N/2 και μεταφέροντας αρχικά κάθε <span class="glossary-term" data-term="packet">πακέτο</span> στο κατάλληλο υπο-πλέγμα. Έτσι, αντί να λυθεί ένα μεγάλο πρόβλημα δρομολόγησης σε ολόκληρο το πλέγμα, δημιουργούνται μικρότερα τοπικά προβλήματα που μπορούν να δρομολογηθούν παράλληλα. Μετά την πρώτη μετακίνηση κάθε επεξεργαστής περιέχει το πολύ δύο <span class="glossary-term" data-term="packet">πακέτα</span> και, μέσα σε κάθε υποπλέγμα, προκύπτει ένα <span class="glossary-term" data-term="mapping-22">(2,2)-mapping</span>, το οποίο μπορεί να διασπαστεί σε δύο ξεχωριστά προβλήματα δρομολόγησης που επιλύονται παράλληλα. Τέλος, τα <span class="glossary-term" data-term="packet">πακέτα</span> μετακινούνται από την ενδιάμεση θέση στον πραγματικό τους προορισμό. Η προτοποθέτηση αυτή των πακέτων περιορίζει τη δύσκολη ενδιάμεση δρομολόγηση σε πλέγματα μισής διάστασης και επιτρέπει την παράλληλη επεξεργασία τους, με αποτέλεσμα συνολικό χρόνο 2,5&radic;N <span class="glossary-term" data-term="step">βημάτων</span> και μέγεθος ουράς σε κάθε επεξεργαστή = 2.<br><br>' +
-        'Μπορείς οποιαδήποτε στιγμή να δεις περισσότερες λεπτομέρειες με το κουμπί «?» για κάθε φάση.</span>';
+        '<span lang="en">We route a mesh of processors in 2.5&radic;N <span class="glossary-term" data-term="step">steps</span> without creating queues, where at every step the processors hold no more than 2 <span class="glossary-term" data-term="packet">packets</span>. We start by splitting the mesh into four sub-meshes &radic;N/2 &times; &radic;N/2 and initially moving each packet to the appropriate sub-mesh. This way, instead of solving one large routing problem over the whole mesh, smaller local problems are created that can be routed in parallel. After the first movement each processor holds at most two packets and, inside each sub-mesh, a <span class="glossary-term" data-term="mapping-22">(2,2)-mapping</span> arises, which can be decomposed into two separate routing problems solved in parallel. Finally, the packets move from the intermediate position to their real destination.</span>' +
+        '<span lang="gr">Δρομολογούμε ένα πλέγμα επεξεργαστών σε 2.5&radic;N <span class="glossary-term" data-term="step">βήματα</span>, χωρίς τη δημιουργία ουρών, όπου σε κάθε βήμα οι επεξεργαστές δεν κρατούν περισσότερα από 2 <span class="glossary-term" data-term="packet">πακέτα</span>. Ξεκινάμε χωρίζοντας το πλέγμα σε τέσσερα υποπλέγματα &radic;N/2 &times; &radic;N/2 και μεταφέροντας αρχικά κάθε πακέτο στο κατάλληλο υπο-πλέγμα. Έτσι, αντί να λυθεί ένα μεγάλο πρόβλημα δρομολόγησης σε ολόκληρο το πλέγμα, δημιουργούνται μικρότερα τοπικά προβλήματα που μπορούν να δρομολογηθούν παράλληλα. Μετά την πρώτη μετακίνηση κάθε επεξεργαστής περιέχει το πολύ δύο πακέτα και, μέσα σε κάθε υποπλέγμα, προκύπτει ένα <span class="glossary-term" data-term="mapping-22">(2,2)-mapping</span>, το οποίο μπορεί να αποσυντεθεί σε δύο ξεχωριστά προβλήματα δρομολόγησης που επιλύονται παράλληλα. Τέλος, τα πακέτα μετακινούνται από την ενδιάμεση θέση στον πραγματικό τους προορισμό.</span>' +
+        '<div class="algo-source"><span lang="en">Source:</span><span lang="gr">Πηγή:</span> D. Krizanc, L. Narayanan. Off-line routing with small queues on a mesh-connected processor array. In Proc. of the 3rd IEEE Symposium on Parallel and Distributed Processing (SPDP 91), IEEE Computer Society, pp. 301 - 304, 1991.</div>';
     const bigIdeaCard = {
-        id: 'kn-bigidea', navLabel: '<span lang="en">Big Idea</span><span lang="gr">Βασική Ιδέα</span>', kind: 'theory', theory: null, interactive: false,
+        id: 'kn-bigidea', navLabel: '<span lang="en">Big idea</span><span lang="gr">Βασική ιδέα</span>', kind: 'theory', theory: null, interactive: false,
         render: function (body) {
             const div = document.createElement('div');
             div.className = 'substep-explain';
@@ -882,7 +883,7 @@ function knHighlightOddEvenPairs(routeGrid, t, boundaries, permIdx, mode, gridOp
             const desc = document.createElement('p');
             desc.className = 'substep-explain';
             desc.innerHTML =
-                '<span lang="en">Compute the <span class="glossary-term" data-term="ism">Intermediate Sub-Mesh</span> for all packets.</span>' +
+                '<span lang="en">Compute the <span class="glossary-term" data-term="ism">intermediate sub-mesh</span> for all packets.</span>' +
                 '<span lang="gr">Υπολογίζουμε το <span class="glossary-term" data-term="ism">intermediate sub-mesh</span> όλων των πακέτων.</span>';
             body.appendChild(desc);
 
@@ -1042,12 +1043,12 @@ function knHighlightOddEvenPairs(routeGrid, t, boundaries, permIdx, mode, gridOp
     };
 
     const p3Theory =
-        '<span lang="en">After Phase 1, every processor is the <span class="glossary-term" data-term="virtual-source">virtual source</span> of 0, 1 or 2 <span class="glossary-term" data-term="packet">packets</span> and the virtual destination of 0, 1 or 2 packets. So within each sub-mesh we get a <strong><span class="glossary-term" data-term="mapping-22">(2,2)-mapping</span></strong>. The routing of the (2,2)-mapping can be decomposed into two <span class="glossary-term" data-term="permutation">permutation</span>-routing problems, which are routed in parallel without ever using the same edges, with at most 2 packets per processor at every step.<br><br>' +
+        '<span lang="en">After Phase 1, every processor is the <span class="glossary-term" data-term="virtual-source">virtual source</span> of 0, 1 or 2 <span class="glossary-term" data-term="packet">packets</span> and the virtual destination of 0, 1 or 2 packets. So within each sub-mesh we get a <strong><span class="glossary-term" data-term="mapping-22">(2,2)-mapping</span></strong>. The routing of the (2,2)-mapping can be decomposed into two (1,1) routing problems, which we turn into <span class="glossary-term" data-term="permutation">permutation</span> problems by inserting dummy packets where needed. The 2 permutations are routed in parallel without ever using the same edges, with at most 2 packets per processor at every step.<br><br>' +
         'We build a bipartite graph with one red node per processor of the sub-mesh (N/4 in total) as a virtual source and the same number of blue nodes as virtual destinations. For every packet we add an edge from the red node of its virtual source to the blue node of its virtual destination. Since each processor is the virtual source of 0, 1 or 2 packets and the virtual destination of 0, 1 or 2, every node has degree at most 2: we add dummy edges until every node has exactly 2, that is, until the graph is <strong>2-regular</strong>.<br><br>' +
-        'A 2-regular graph decomposes into disjoint <strong>cycles</strong>, and since it is bipartite every cycle has even length. Walking each cycle and coloring its edges alternately, no node ends up with two edges of the same color. Each color is therefore a <strong>Permutation</strong>. With packets split into Permutations A and B, we route them in parallel. Permutation A is routed with 3 executions of <span class="glossary-term" data-term="odd-even">odd-even transposition sort</span> (column – row – column) and Permutation B with 3 executions (row – column – row). The permutations complete in 3 &times; &radic;N/2 <span class="glossary-term" data-term="step">steps</span> and run in parallel, since they never use the same edges at any step.</span>' +
-        '<span lang="gr">Μετά την ολοκλήρωση της Φάσης 1, κάθε επεξεργαστής αποτελεί <span class="glossary-term" data-term="virtual-source">virtual source</span> για 0, 1 ή 2 <span class="glossary-term" data-term="packet">πακέτα</span> και virtual destination για 0, 1 ή 2 πακέτα. Επομένως, μέσα σε κάθε υποπλέγμα προκύπτει ένα <strong><span class="glossary-term" data-term="mapping-22">(2,2)-mapping</span></strong>. Η δρομολόγηση του (2,2)-mapping μπορεί να αποσυντεθεί σε δύο προβλήματα <span class="glossary-term" data-term="permutation">μετάθεσης</span>, τα οποία δρομολογούνται παράλληλα χωρίς να χρησιμοποιούν τις ίδιες ακμές, με το πολύ 2 πακέτα ανά επεξεργαστή σε κάθε βήμα.<br><br>' +
+        'A 2-regular graph decomposes into disjoint <strong>cycles</strong>, and since it is bipartite every cycle has even length. Walking each cycle and coloring its edges alternately, no node ends up with two edges of the same color. Each color is therefore a <strong>permutation</strong>. With packets split into permutations A and B, we route them in parallel. Permutation A is routed with 3 executions of <span class="glossary-term" data-term="odd-even">odd-even transposition sort</span> (column – row – column) and Permutation B with 3 executions (row – column – row). The permutations complete in 3 &times; &radic;N/2 <span class="glossary-term" data-term="step">steps</span> and run in parallel, since they never use the same edges at any step.</span>' +
+        '<span lang="gr">Μετά την ολοκλήρωση της Φάσης 1, κάθε επεξεργαστής αποτελεί <span class="glossary-term" data-term="virtual-source">virtual source</span> για 0, 1 ή 2 <span class="glossary-term" data-term="packet">πακέτα</span> και virtual destination για 0, 1 ή 2 πακέτα. Επομένως, μέσα σε κάθε υποπλέγμα προκύπτει ένα <strong><span class="glossary-term" data-term="mapping-22">(2,2)-mapping</span></strong>. Η δρομολόγηση του (2,2)-mapping μπορεί να αποσυντεθεί σε δύο προβλήματα (1,1) δρομολόγησης, τα οποία μετατρέπουμε σε προβλήματα <span class="glossary-term" data-term="permutation">μετάθεσης</span> με την εισαγωγή εικονικών πακέτων όπου χρειάζεται. Οι 2 μεταθέσεις δρομολογούνται παράλληλα χωρίς να χρησιμοποιούν τις ίδιες ακμές, με το πολύ 2 πακέτα ανά επεξεργαστή σε κάθε βήμα.<br><br>' +
         'Φτιάχνουμε ένα διμερές γράφημα με έναν κόκκινο κόμβο ανά επεξεργαστή του υποπλέγματος (N/4 συνολικά) ως virtual source και ισάριθμους μπλε κόμβους ως virtual destination. Για κάθε πακέτο προσθέτουμε μια ακμή από τον κόκκινο κόμβο του virtual source του προς τον μπλε κόμβο του virtual destination του. Επειδή κάθε επεξεργαστής είναι virtual source για 0, 1 ή 2 πακέτα και virtual destination για 0, 1 ή 2, κάθε κόμβος έχει βαθμό το πολύ 2: συμπληρώνουμε με dummy ακμές μέχρι κάθε κόμβος να έχει ακριβώς 2, δηλαδή μέχρι το γράφημα να γίνει <strong>2-κανονικό</strong>.<br><br>' +
-        'Ένα 2-κανονικό γράφημα διασπάται σε ξένους μεταξύ τους <strong>κύκλους</strong>, και επειδή είναι διμερές κάθε κύκλος έχει άρτιο μήκος. Ακολουθώντας κάθε κύκλο και χρωματίζοντας τις ακμές του εναλλάξ, κανένας κόμβος δεν καταλήγει με δύο ακμές ίδιου χρώματος. Κάθε χρώμα είναι έτσι μια <strong>Μετάθεση</strong>. Με τα πακέτα χωρισμένα σε Μεταθέσεις Α και Β, τα δρομολογούμε παράλληλα. Η Μετάθεση Α δρομολογείται με 3 εκτελέσεις του <span class="glossary-term" data-term="odd-even">odd-even transposition sort</span> (στήλη – γραμμή – στήλη) και η Μετάθεση Β με 3 εκτελέσεις (γραμμή – στήλη – γραμμή). Οι μεταθέσεις ολοκληρώνονται σε 3 &times; &radic;N/2 <span class="glossary-term" data-term="step">βήματα</span> και εκτελούνται παράλληλα, αφού δεν χρησιμοποιούν σε κανένα βήμα τις ίδιες ακμές.</span>'
+        'Ένα 2-κανονικό γράφημα διασπάται σε ξένους μεταξύ τους <strong>κύκλους</strong>, και επειδή είναι διμερές κάθε κύκλος έχει άρτιο μήκος. Ακολουθώντας κάθε κύκλο και χρωματίζοντας τις ακμές του εναλλάξ, κανένας κόμβος δεν καταλήγει με δύο ακμές ίδιου χρώματος. Κάθε χρώμα είναι έτσι μια <strong>μετάθεση</strong>. Με τα πακέτα χωρισμένα σε μεταθέσεις Α και Β, τα δρομολογούμε παράλληλα. Η Μετάθεση Α δρομολογείται με 3 εκτελέσεις του <span class="glossary-term" data-term="odd-even">odd-even transposition sort</span> (στήλη – γραμμή – στήλη) και η Μετάθεση Β με 3 εκτελέσεις (γραμμή – στήλη – γραμμή). Οι μεταθέσεις ολοκληρώνονται σε 3 &times; &radic;N/2 <span class="glossary-term" data-term="step">βήματα</span> και εκτελούνται παράλληλα, αφού δεν χρησιμοποιούν σε κανένα βήμα τις ίδιες ακμές.</span>'
     const p3TheoryCard = {
         id: 'kn-p3-theory', kind: 'theory', theory: p3Theory, interactive: false,
         render: function (body) {
@@ -1066,8 +1067,8 @@ function knHighlightOddEvenPairs(routeGrid, t, boundaries, permIdx, mode, gridOp
 
     function knAxisWordGr(axis) { return axis === 'col' ? 'στήλη' : 'γραμμή'; }
     function knOddEvenLabel(axis) {
-        return '<span lang="en">Odd-Even per ' + (axis === 'col' ? 'column' : 'row') + '</span>' +
-            '<span lang="gr">Odd-Even ανά ' + knAxisWordGr(axis) + '</span>';
+        return '<span lang="en">Odd-even per ' + (axis === 'col' ? 'column' : 'row') + '</span>' +
+            '<span lang="gr">Odd-even ανά ' + knAxisWordGr(axis) + '</span>';
     }
 
     function knPermIntroText(permIdx) {
@@ -1097,7 +1098,7 @@ function knHighlightOddEvenPairs(routeGrid, t, boundaries, permIdx, mode, gridOp
         const s = knSubphaseIndex(t, boundaries);
         const relT = t - boundaries[s];
         const segLen = boundaries[s + 1] - boundaries[s];
-        const oddEven = '<span class="glossary-term" data-term="odd-even">Odd-Even Transposition</span>';
+        const oddEven = '<span class="glossary-term" data-term="odd-even">odd-even transposition</span>';
         const stepTxt = (gr ? 'Βήμα ' : 'Step ') + relT + '/' + segLen;
         const tail = ' <span style="color:#888;">(' + (gr ? 'υπο-φάση ' : 'sub-phase ') + (s + 1) + '/3)</span>';
         function line(pi) {
@@ -1206,12 +1207,19 @@ function knHighlightOddEvenPairs(routeGrid, t, boundaries, permIdx, mode, gridOp
         };
     }
 
+    function knPhase2CanvasHeight() {
+        const h = window.innerHeight;
+        if (window.innerWidth <= 900) return Math.round(Math.max(220, Math.min(h * 0.42, 420)));
+        return Math.round(Math.max(280, Math.min(620, h - KN_P2_CHROME)));
+    }
+
     const p3ActionCard = {
         id: 'kn-p3-action', navLabel: '<span lang="en">Phase 2</span><span lang="gr">Φάση 2</span>', kind: 'action', theory: p3Theory, interactive: true,
         render: function (body, api) {
 
             const markRouted = function () { api.complete(); };
             const content = document.createElement('div');
+            content.dataset.zoomHeight = knPhase2CanvasHeight();
             body.appendChild(content);
 
             function buildStep3NavRow(activeKey) {
@@ -1263,6 +1271,7 @@ function knHighlightOddEvenPairs(routeGrid, t, boundaries, permIdx, mode, gridOp
                 row._setActive = function (i) {
                     btns.forEach(function (b, k) { b.className = k === i ? 'btn-primary' : 'btn-secondary'; });
                 };
+                row._setEnabled = function (i, enabled) { btns[i].disabled = !enabled; };
                 return row;
             }
 
@@ -1273,8 +1282,8 @@ function knHighlightOddEvenPairs(routeGrid, t, boundaries, permIdx, mode, gridOp
                 pickNote.className = 'substep-explain';
                 pickNote.style.marginBottom = '12px';
                 pickNote.innerHTML =
-                    '<span lang="en">Goal of Phase 2: solve the routing problem separately in each sub-mesh. Press «?» for more details.</span>' +
-                    '<span lang="gr">Στόχος της Φάσης 2: Λύνουμε το πρόβλημα δρομολόγησης ξεχωριστά σε κάθε sub-mesh. Επίλεξε «?» για περισσότερες λεπτομέρειες.</span>';
+                    '<span lang="en">Goal of Phase 2: solve the routing problem separately in each sub-mesh.</span>' +
+                    '<span lang="gr">Στόχος της Φάσης 2: λύνουμε το πρόβλημα δρομολόγησης ξεχωριστά σε κάθε sub-mesh.</span>';
                 content.appendChild(pickNote);
 
                 content.appendChild(buildStep3NavRow(null));
@@ -1301,13 +1310,14 @@ function knHighlightOddEvenPairs(routeGrid, t, boundaries, permIdx, mode, gridOp
                 const head = document.createElement('div');
                 head.className = 'substep-explain';
                 head.innerHTML =
-                    '<span lang="en">Phase 2 is split into 2 sub-phases: 1. Decomposition of the <span class="glossary-term" data-term="mapping-22">(2,2)-mapping</span> into 2 <span class="glossary-term" data-term="permutation">Permutations</span> and 2. Parallel Routing of the Permutations.</span>' +
-                    '<span lang="gr">Η Φάση 2 χωρίζεται σε 2 υπο-φάσεις: 1. Αποσύνθεση του <span class="glossary-term" data-term="mapping-22">(2,2)-mapping</span> σε 2 <span class="glossary-term" data-term="permutation">Μεταθέσεις</span> και 2. Παράλληλη Δρομολόγηση των Μεταθέσεων.</span>';
+                    '<span lang="en">Phase 2 is split into 2 sub-phases: 1. Decomposition of the <span class="glossary-term" data-term="mapping-22">(2,2)-mapping</span> into 2 <span class="glossary-term" data-term="permutation">permutations</span> and 2. Parallel routing of the permutations.</span>' +
+                    '<span lang="gr">Η Φάση 2 χωρίζεται σε 2 υπο-φάσεις: 1. Αποσύνθεση του <span class="glossary-term" data-term="mapping-22">(2,2)-mapping</span> σε 2 <span class="glossary-term" data-term="permutation">μεταθέσεις</span> και 2. Παράλληλη δρομολόγηση των μεταθέσεων.</span>';
                 view.appendChild(head);
 
                 view.appendChild(buildStep3NavRow(Q.key));
 
                 const subphaseRow = buildSubphaseRow(function (i) { selectSubphase(i); });
+                subphaseRow._setEnabled(1, !!Q._decompDone);
                 view.appendChild(subphaseRow);
 
                 const permNav = document.createElement('div');
@@ -1427,18 +1437,18 @@ function knHighlightOddEvenPairs(routeGrid, t, boundaries, permIdx, mode, gridOp
                     '<span lang="en"><strong>' + knQuadChip(Q.qi) + ' sub-mesh</strong> (rows ' + rowStart + '-' + rowEnd + ', columns ' + colStart + '-' + colEnd + '): ' + Q.packets.length + ' packets. ' +
                     'We build a graph with one <span style="color:#c0392b; font-weight:700;">red</span> node per processor of the sub-mesh as a virtual source and one <span style="color:#2255c0; font-weight:700;">blue</span> node per processor as a virtual destination. Then, for every packet we create an edge between its virtual source and its virtual destination. Finally we add empty/dummy edges (dashed) so that the graph becomes <strong>2-regular</strong> (every node has exactly 2 edges). Starting from an uncolored edge we then color edges alternately ' + knPermChip(1) + ' / ' + knPermChip(2) + ', so that no processor ever holds 2 packets of the same permutation.</span>' +
                     '<span lang="gr"><strong>' + knQuadChip(Q.qi) + ' sub-mesh</strong> (γραμμές ' + rowStart + '-' + rowEnd + ', στήλες ' + colStart + '-' + colEnd + '): ' + Q.packets.length + ' πακέτα. ' +
-                    'Φτιάχνουμε γράφημα με έναν <span style="color:#c0392b; font-weight:700;">Κόκκινο</span> κόμβο ανά επεξεργαστή του sub-mesh ως virtual source και έναν <span style="color:#2255c0; font-weight:700;">Μπλε</span> κόμβο ανά επεξεργαστή ως virtual destination. Έπειτα, για κάθε πακέτο δημιουργούμε ακμή μεταξύ virtual source και virtual destination του. Στο τέλος προσθέτουμε κενές/dummy ακμές (διακεκομμένες) ώστε το γράφημα να γίνει <strong>2-regular</strong> (κάθε κόμβος με ακριβώς 2 ακμές). Ξεκινώντας από μια άχρωμη ακμή χρωματίζουμε εναλλάξ ' + knPermChip(1) + ' / ' + knPermChip(2) + ', ώστε κανένας επεξεργαστής να μην έχει ποτέ 2 πακέτα της ίδιας μετάθεσης.</span>';
+                    'Φτιάχνουμε γράφημα με έναν <span style="color:#c0392b; font-weight:700;">κόκκινο</span> κόμβο ανά επεξεργαστή του sub-mesh ως virtual source και έναν <span style="color:#2255c0; font-weight:700;">μπλε</span> κόμβο ανά επεξεργαστή ως virtual destination. Έπειτα, για κάθε πακέτο δημιουργούμε ακμή μεταξύ virtual source και virtual destination του. Στο τέλος προσθέτουμε κενές/dummy ακμές (διακεκομμένες) ώστε το γράφημα να γίνει <strong>2-regular</strong> (κάθε κόμβος με ακριβώς 2 ακμές). Ξεκινώντας από μια άχρωμη ακμή χρωματίζουμε εναλλάξ ' + knPermChip(1) + ' / ' + knPermChip(2) + ', ώστε κανένας επεξεργαστής να μην έχει ποτέ 2 πακέτα της ίδιας μετάθεσης.</span>';
 
                 const decompSteps = [];
                 decompSteps.push({
                     group: 'intro', color: '#9aa5b5',
-                    label: '<span lang="en">Creating nodes</span><span lang="gr">Δημιουργία Κόμβων</span>',
+                    label: '<span lang="en">Creating nodes</span><span lang="gr">Δημιουργία κόμβων</span>',
                     text: function () { return decompIntro; },
                     draw: function () { drawDecompGrid(false); drawDecompGraph(0, false); }
                 });
                 decompSteps.push({
                     group: 'edges', color: '#9aa5b5',
-                    label: '<span lang="en">Creating edges</span><span lang="gr">Δημιουργία Ακμών</span>',
+                    label: '<span lang="en">Creating edges</span><span lang="gr">Δημιουργία ακμών</span>',
                     text: function () {
                         return isGrLang()
                             ? (Q.packets.length + ' πραγματικές ακμές + ' + (Q.split.edges.length - Q.packets.length) + ' dummy: το γράφημα είναι 2-regular και έτοιμο για χρωματισμό.')
@@ -1465,7 +1475,9 @@ function knHighlightOddEvenPairs(routeGrid, t, boundaries, permIdx, mode, gridOp
                     draw: function () { drawDecompGrid(true); drawDecompGraph(mEdges, true); }
                 });
 
-                const decompTl = knMakeTimeline(decompSteps);
+                const decompTl = knMakeTimeline(decompSteps, {
+                    onEnd: function () { Q._decompDone = true; subphaseRow._setEnabled(1, true); }
+                });
 
                 const permTls = [null, null, null];
 
@@ -1573,8 +1585,8 @@ function knHighlightOddEvenPairs(routeGrid, t, boundaries, permIdx, mode, gridOp
 
                     function groupForMs(i) {
                         if (i <= 1) return { g: 'setup', color: '#9aa5b5', label: i === 0
-                            ? '<span lang="en">Creating nodes</span><span lang="gr">Δημιουργία Κόμβων</span>'
-                            : '<span lang="en">Creating edges</span><span lang="gr">Δημιουργία Ακμών</span>' };
+                            ? '<span lang="en">Creating nodes</span><span lang="gr">Δημιουργία κόμβων</span>'
+                            : '<span lang="en">Creating edges</span><span lang="gr">Δημιουργία ακμών</span>' };
                         for (let k = 0; k < trace.roundRanges.length; k++) {
                             const r = trace.roundRanges[k];
                             if (i >= r.start && i <= r.end) {
@@ -1743,7 +1755,10 @@ function knHighlightOddEvenPairs(routeGrid, t, boundaries, permIdx, mode, gridOp
                             { tint: true, onHover: hoverWithPerm, getStyle: permStyle });
                     }
                 }];
-                const decompTl = knMakeTimeline(decompSteps);
+                subphaseRow._setEnabled(1, false);
+                const decompTl = knMakeTimeline(decompSteps, {
+                    onEnd: function () { subphaseRow._setEnabled(1, true); }
+                });
 
                 function drawAll(t) {
                     knDrawGrid(gridHolder, knPositionsAt(packets, traj2, t), n, half, {
@@ -1836,6 +1851,53 @@ function knHighlightOddEvenPairs(routeGrid, t, boundaries, permIdx, mode, gridOp
         }
     };
 
+    function buildKrizancAnimationConfig() {
+        const p1traj = knBuildPhase2Traj(packets, n, half);
+        const p4traj = knBuildPhase4Traj(packets, n, half);
+        const total = half + S2 + half;
+
+        const fullTraj = {};
+        packets.forEach(function (p) {
+            fullTraj[p.id] = p1traj[p.id].concat(traj2[p.id].slice(1), p4traj[p.id].slice(1));
+        });
+
+        function directionAt(k) {
+            return function (p) {
+                const arr = fullTraj[p.id];
+                if (k >= arr.length - 1) return null;
+                const cur = arr[k], nxt = arr[k + 1];
+                if (nxt.r > cur.r) return { arrow: '\u2193' };
+                if (nxt.r < cur.r) return { arrow: '\u2191' };
+                if (nxt.c > cur.c) return { arrow: '\u2192' };
+                if (nxt.c < cur.c) return { arrow: '\u2190' };
+                return null;
+            };
+        }
+
+        const frames = [];
+        for (let k = 0; k <= total; k++) {
+            (function (k) {
+                let label;
+                if (k === 0) label = animFrameLabel('Αρχικό πλέγμα', 'Initial mesh');
+                else if (k <= half) label = animPhaseLabel(1, k);
+                else if (k <= half + S2) label = animPhaseLabel(2, k - half);
+                else label = animPhaseLabel(3, k - half - S2);
+                const inPhase2 = k > half && k <= half + S2;
+                frames.push({
+                    label: label, step: k, offline: false,
+                    draw: function (slot) {
+                        knDrawGrid(slot, knPositionsAt(packets, fullTraj, k), n, half, {
+                            tint: true,
+                            getStyle: inPhase2 ? permStyle : null,
+                            getDirection: directionAt(k)
+                        });
+                    }
+                });
+            })(k);
+        }
+        return { frames: frames, totalSteps: total };
+    }
+
     const p4ActionCard = {
         id: 'kn-p4-action', navLabel: '<span lang="en">Phase 3</span><span lang="gr">Φάση 3</span>', kind: 'action', theory: p4Theory, interactive: true,
         render: function (body, api) {
@@ -1914,6 +1976,10 @@ function knHighlightOddEvenPairs(routeGrid, t, boundaries, permIdx, mode, gridOp
                     '<br><span lang="en">Phase 1 = ' + half + ', Phase 2 = ' + S2 + ', Phase 3 = ' + half + '</span>' +
                     '<span lang="gr">Φάση 1 = ' + half + ', Φάση 2 = ' + S2 + ', Φάση 3 = ' + half + '</span></div></div>' +
                     '</div>';
+                const resultActions = document.createElement('div');
+                resultActions.className = 'result-actions';
+                bannerSlot.querySelector('.result-banner').appendChild(resultActions);
+                appendAnimationLauncher(resultActions, buildKrizancAnimationConfig);
                 api.complete();
             });
 

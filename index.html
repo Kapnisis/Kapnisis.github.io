@@ -4,14 +4,14 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Offline Δρομολόγηση σε Πλέγμα / Offline Routing on a Mesh</title>
+    <title>Παράλληλη offline δρομολόγηση σε πλέγμα / Parallel offline routing on the mesh</title>
 
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.0.0/dist/css/bootstrap.min.css"
         integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
 
     <link href="grid_ver2.css?v=2" rel="stylesheet" />
-    <link href="offline-alg_ver2.css?v=9" rel="stylesheet" />
-    <link href="shared-ui.css?v=4" rel="stylesheet" />
+    <link href="offline-alg_ver2.css?v=11" rel="stylesheet" />
+    <link href="shared-ui.css?v=8" rel="stylesheet" />
 
     <!-- Zoom / Pan -->
     <script src="https://cdn.jsdelivr.net/npm/@panzoom/panzoom@4.5.1/dist/panzoom.min.js"></script>
@@ -30,8 +30,8 @@
     <nav class="navbar navbar-expand-lg navbar-dark" style="background: linear-gradient(135deg, #1a2a4a, #2a4a7a);">
         <div class="container-fluid px-4">
             <a class="navbar-brand" href="index.html" style="font-weight: bold; font-size: 18px; color: white; text-decoration: none; flex: 1 1 auto; min-width: 0;">
-                <span lang="en">Offline Routing on a Mesh</span>
-                <span lang="gr">Offline Δρομολόγηση σε Πλέγμα</span>
+                <span lang="en">Parallel offline routing on the mesh</span>
+                <span lang="gr">Παράλληλη offline δρομολόγηση σε πλέγμα</span>
             </a>
             <div class="lang-switch" style="flex-shrink: 0; margin-left: 16px;">
                 <button class="lang-btn" data-lang="gr" onclick="setLang('gr')">ΕΛ</button>
@@ -53,21 +53,22 @@
 
             <div class="intro-panel">
                 <span lang="en">In our application we present two algorithms that use off-line techniques to route information packets on N processors arranged in a two-dimensional square mesh &radic;N x &radic;N. Choose the algorithm you want to use:</span>
-                <span lang="gr">Στην εφαρμογή μας παρουσιάζουμε δύο αλγορίθμους που χρησιμοποιούν off-line τεχνικές για τη δρομολόγηση πακέτων πληροφορίας σε Ν επεξεργαστές διαταγμένους σε διδιάστατο τετραγωνικό πλέγμα &radic;N x &radic;N. Επίλεξε τον αλγόριθμο που θες να χρησιμοποιήσεις:</span>
+                <span lang="gr">Στην εφαρμογή μας παρουσιάζουμε δύο αλγορίθμους που χρησιμοποιούν off-line τεχνικές για τη δρομολόγηση πακέτων πληροφορίας σε N επεξεργαστές διαταγμένους σε διδιάστατο τετραγωνικό πλέγμα &radic;N x &radic;N. Επίλεξε τον αλγόριθμο που θες να χρησιμοποιήσεις:</span>
             </div>
 
             <div class="algo-cards">
                 <div class="algo-card" data-algo="basic">
                     <div class="algo-card-header">
-                        <h3><span lang="en">A Basic Offline Algorithm</span><span lang="gr">Ένας Βασικός Offline Αλγόριθμος</span></h3>
+                        <h3><span lang="en">Matching-based parallel offline routing algorithm</span><span lang="gr">Παράλληλος αλγόριθμος offline δρομολόγησης βασισμένος σε ταιριάσματα</span></h3>
                     </div>
                     <div class="algo-card-body">
-                        <div class="algo-stat-row"><span class="algo-stat-label" lang="en">Theoretical Upper Bound of Steps</span><span class="algo-stat-label" lang="gr">Θεωρητικό Άνω Φράγμα Βημάτων</span><span class="algo-stat-value">3 &middot; &radic;N &minus; 3</span></div>
+                        <div class="algo-stat-row"><span class="algo-stat-label" lang="en">Theoretical upper bound of steps</span><span class="algo-stat-label" lang="gr">Θεωρητικό άνω φράγμα βημάτων</span><span class="algo-stat-value">3 &middot; &radic;N &minus; 3</span></div>
                         <div class="algo-stat-row"><span class="algo-stat-label" lang="en">Queue size per edge</span><span class="algo-stat-label" lang="gr">Μέγεθος ουράς σε κάθε ακμή</span><span class="algo-stat-value">1</span></div>
                         <p style="margin-top:14px; margin-bottom:0; line-height:1.5;">
                             <span lang="en">Executes 3 greedy permutations.<br>Protects the queue size with an off-line routing trick before executing them.</span>
                             <span lang="gr">Εκτελεί 3 άπληστες μεταθέσεις.<br>Προστατεύει το μέγεθος ουρών με ένα τρικ off-line δρομολόγησης πριν την εκτέλεσή τους.</span>
                         </p>
+                        <div class="algo-source"><span lang="en">Source:</span><span lang="gr">Πηγή:</span> F. T. Leighton, Introduction to Parallel Algorithms and Architectures, San Mateo, CA: Morgan Kaufmann Publishers, 1992.</div>
                     </div>
                     <div class="algo-card-footer">
                         <span lang="en">Select this algorithm</span>
@@ -77,16 +78,17 @@
 
                 <div class="algo-card" data-algo="krizanc">
                     <div class="algo-card-header">
-                        <h3><span lang="en">The Krizanc-Narayanan Algorithm</span><span lang="gr">Αλγόριθμος των Krizanc-Narayanan</span></h3>
+                        <h3><span lang="en">Parallel offline routing algorithm with queues of size 2</span><span lang="gr">Παράλληλος αλγόριθμος offline δρομολόγησης με ουρές μεγέθους 2</span></h3>
                     </div>
                     <div class="algo-card-body">
-                        <div class="algo-stat-row"><span class="algo-stat-label" lang="en">Theoretical Upper Bound of Steps</span><span class="algo-stat-label" lang="gr">Θεωρητικό Άνω Φράγμα Βημάτων</span><span class="algo-stat-value">2.5 &middot; &radic;N</span></div>
+                        <div class="algo-stat-row"><span class="algo-stat-label" lang="en">Theoretical upper bound of steps</span><span class="algo-stat-label" lang="gr">Θεωρητικό άνω φράγμα βημάτων</span><span class="algo-stat-value">2.5 &middot; &radic;N</span></div>
                         <div class="algo-stat-row"><span class="algo-stat-label" lang="en">Queue size per processor</span><span class="algo-stat-label" lang="gr">Μέγεθος ουράς επεξεργαστή</span><span class="algo-stat-value">2</span></div>
 
                         <p style="margin-top:14px; margin-bottom:0; line-height:1.5;">
                             <span lang="en">Splits the mesh into quadrants and performs off-line routing on them to achieve the queue bound.</span>
                             <span lang="gr">Χωρίζει το πλέγμα σε τεταρτημόρια και κάνει off-line δρομολόγηση σε αυτά για να επιτύχει το όριο ουράς.</span>
                         </p>
+                        <div class="algo-source"><span lang="en">Source:</span><span lang="gr">Πηγή:</span> D. Krizanc, L. Narayanan. Off-line routing with small queues on a mesh-connected processor array. In Proc. of the 3rd IEEE Symposium on Parallel and Distributed Processing (SPDP 91), IEEE Computer Society, pp. 301 - 304, 1991.</div>
                     </div>
                     <div class="algo-card-footer">
                         <span lang="en">Select this algorithm</span>
@@ -107,11 +109,11 @@
 
     </div>
 
-    <script src="shared-ui.js?v=17"></script>
-    <script src="animation.js?v=2"></script>
-    <script src="grid_ver2.js?v=5"></script>
-    <script src="offline-alg_ver2.js?v=17"></script>
-<script src="k-n.js?v=12"></script>
+    <script src="shared-ui.js?v=20"></script>
+    <script src="animation.js?v=3"></script>
+    <script src="grid_ver2.js?v=8"></script>
+    <script src="offline-alg_ver2.js?v=20"></script>
+<script src="k-n.js?v=15"></script>
 
     <script>
         window.skipTutorials = false;
@@ -149,7 +151,7 @@
                                 }
                                 api.next();
                             },
-                            prev: api.prev, goTo: api.goTo, isSkip: api.isSkip
+                            prev: api.prev, goTo: api.goTo, isSkip: api.isSkip, topSlot: api.topSlot
                         });
                     }
                 });
@@ -170,8 +172,8 @@
                                             const gr = document.body.classList.contains('lang-gr');
                                             msg.style.display = 'block';
                                             msg.innerHTML = gr
-                                                ? '<strong>Δεν είναι δυνατή η συνέχεια.</strong> Ο αλγόριθμος Krizanc-Narayanan απαιτεί <strong>άρτιο</strong> √N — το πλέγμα χωρίζεται σε 4 τεταρτημόρια n/2 × n/2. Δοκίμασε n = 2, 4, 6, 8, …'
-                                                : '<strong>Cannot continue.</strong> The Krizanc-Narayanan algorithm requires an <strong>even</strong> √N — the mesh is split into 4 quadrants of size n/2 × n/2. Try n = 2, 4, 6, 8, …';
+                                                ? '<strong>Δεν είναι δυνατή η συνέχεια.</strong> Ο αλγόριθμος απαιτεί <strong>άρτιο</strong> √N — το πλέγμα χωρίζεται σε 4 τεταρτημόρια n/2 × n/2. Δοκίμασε n = 2, 4, 6, 8, …'
+                                                : '<strong>Cannot continue.</strong> The algorithm requires an <strong>even</strong> √N — the mesh is split into 4 quadrants of size n/2 × n/2. Try n = 2, 4, 6, 8, …';
                                         }
                                         return;
                                     }
@@ -183,7 +185,7 @@
                                 }
                                 api.next();
                             },
-                            prev: api.prev, goTo: api.goTo, isSkip: api.isSkip
+                            prev: api.prev, goTo: api.goTo, isSkip: api.isSkip, topSlot: api.topSlot
                         });
                     }
                 });
