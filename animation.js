@@ -145,6 +145,32 @@ function buildRoutingAnimation(hostEl, config) {
     return { stop: stop, reset: function () { stop(); show(0); } };
 }
 
+/* Reuse the current instance with the other algorithm */
+function appendTransferButton(parent, targetAlgo, n, values) {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'btn-primary';
+    btn.innerHTML =
+        '<span lang="en">Try the same instance with the other algorithm too</span>' +
+        '<span lang="gr">Δοκίμασε το ίδιο στιγμιότυπο και με τον άλλο αλγόριθμο</span>';
+    btn.addEventListener('click', function () {
+        window._oaTransferToKN = { n: n, values: values };
+        resetMeshCard();
+        document.getElementById('algoSelectScreen').style.display = 'block';
+        document.getElementById('flowContainer').style.display = 'none';
+        document.querySelectorAll('.algo-card').forEach(function (c) { c.classList.remove('selected'); });
+        const card = document.querySelector('.algo-card[data-algo="' + targetAlgo + '"]');
+        if (!card) return;
+        card.classList.add('selected');
+        document.getElementById('selectedAlgo').value = targetAlgo;
+        const startBtn = document.getElementById('startFlowBtn');
+        startBtn.disabled = false;
+        startBtn.click();
+    });
+    parent.appendChild(btn);
+    return btn;
+}
+
 /* Animation launcher */
 function openAnimationModal(getConfig) {
     const overlay = document.createElement('div');

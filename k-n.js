@@ -796,6 +796,12 @@ function knHighlightOddEvenPairs(routeGrid, t, boundaries, permIdx, mode, gridOp
             div.className = 'substep-explain';
             div.innerHTML = bigIdeaHtml;
             body.appendChild(div);
+            const note = document.createElement('div');
+            note.className = 'help-hint-note';
+            note.innerHTML =
+                '<span lang="en">In every phase, press the «?» button for more details.</span>' +
+                '<span lang="gr">Σε κάθε φάση, πάτησε το κουμπί «?» για περισσότερες λεπτομέρειες.</span>';
+            body.appendChild(note);
         }
     };
 
@@ -1980,6 +1986,9 @@ function knHighlightOddEvenPairs(routeGrid, t, boundaries, permIdx, mode, gridOp
                 resultActions.className = 'result-actions';
                 bannerSlot.querySelector('.result-banner').appendChild(resultActions);
                 appendAnimationLauncher(resultActions, buildKrizancAnimationConfig);
+                appendTransferButton(resultActions, 'basic', n, packets.map(function (p) {
+                    return { row: p.sourceRow, col: p.sourceCol, val: p.destRow + ',' + p.destCol };
+                }));
                 api.complete();
             });
 

@@ -303,7 +303,8 @@ function buildBasicAlgorithmCards() {
         'The way the <span class="glossary-term" data-term="packet">packets</span> are rearranged within each column during Phase 1 is computed <span class="glossary-term" data-term="offline">offline</span> and guarantees that no queues form during the <span class="glossary-term" data-term="greedy">greedy</span> routing of Phases 2 and 3.</span>' +
         '<span lang="gr">Μπορούμε να δρομολογήσουμε ένα τετραγωνικό <span class="glossary-term" data-term="mesh">πλέγμα</span> (&radic;N γραμμές &times; &radic;N στήλες) σε 3&radic;N&minus;3 <span class="glossary-term" data-term="step">βήματα</span>, διατηρώντας σε κάθε επεξεργαστή μέγιστο μέγεθος ουράς = 1, εκτελώντας τον αλγόριθμό μας σε 3 φάσεις.<br><br>' +
         'Στη Φάση 1, αναδιατάσσουμε τα <span class="glossary-term" data-term="packet">πακέτα</span> εντός κάθε στήλης, έτσι ώστε το πολύ ένα <span class="glossary-term" data-term="packet">πακέτο</span> σε κάθε γραμμή να προορίζεται για κάθε στήλη. Στη Φάση 2, δρομολογούμε κάθε <span class="glossary-term" data-term="packet">πακέτο</span> εντός της γραμμής του προς τη σωστή στήλη. Στη Φάση 3, δρομολογούμε κάθε <span class="glossary-term" data-term="packet">πακέτο</span> εντός της στήλης του προς τη σωστή γραμμή (δηλαδή, στον προορισμό του).<br><br>' +
-        'Ο τρόπος αναδιάταξης των <span class="glossary-term" data-term="packet">πακέτων</span> εντός κάθε στήλης κατά τη Φάση 1 υπολογίζεται <span class="glossary-term" data-term="offline">offline</span> και εξασφαλίζει τη μη δημιουργία ουρών κατά την <span class="glossary-term" data-term="greedy">άπληστη</span> δρομολόγηση των φάσεων 2 και 3.</span>';
+        'Ο τρόπος αναδιάταξης των <span class="glossary-term" data-term="packet">πακέτων</span> εντός κάθε στήλης κατά τη Φάση 1 υπολογίζεται <span class="glossary-term" data-term="offline">offline</span> και εξασφαλίζει τη μη δημιουργία ουρών κατά την <span class="glossary-term" data-term="greedy">άπληστη</span> δρομολόγηση των φάσεων 2 και 3.</span>' +
+        '<div class="algo-source"><span lang="en">Source:</span><span lang="gr">Πηγή:</span> F. T. Leighton, Introduction to Parallel Algorithms and Architectures, San Mateo, CA: Morgan Kaufmann Publishers, 1992.</div>';
 
     const bigIdeaCard = {
         id: 'p1-bigidea', navLabel: '<span lang="en">Big idea</span><span lang="gr">Βασική ιδέα</span>', kind: 'action', theory: null, interactive: false,
@@ -333,8 +334,7 @@ function buildBasicAlgorithmCards() {
         'Δημιουργούμε ένα διμερές γράφημα: στη μια πλευρά με &radic;N κόκκινους κόμβους (K1…K&radic;N) που αντιπροσωπεύουν κάθε στήλη θέσης και στην άλλη &radic;N μπλε κόμβους (M1…M&radic;N) που αντιπροσωπεύουν κάθε στήλη προορισμού. Ενώνουμε τους κόμβους με ακμές που αντιπροσωπεύουν τα πακέτα. Ένα πακέτο που βρίσκεται στη θέση (a,b) και έχει προορισμό (c,d) δίνει την ακμή K<sub>b</sub>&ndash;M<sub>d</sub>.<br><br>' +
         'Χρωματίζουμε κάθε ακμή έτσι ώστε κανένας κόμβος Κ να μην έχει ακμές ίδιου χρώματος (άρα τα πακέτα κάθε στήλης θα έχουν διαφορετική γραμμή μετά τη μετάθεση) και κανένας κόμβος Μ να μην έχει ακμές ίδιου χρώματος (άρα μετά τη μετάθεση κάθε γραμμή έχει διαφορετικές στήλες προορισμού).<br><br>' +
         'Αυτό επιτυγχάνεται με τη βοήθεια του <span class="glossary-term" data-term="hall">θεωρήματος ταιριάσματος του Hall</span>, αφού το γράφημά μας είναι διμερές και &radic;N-κανονικό.<br><br>' +
-        'Μετά την ολοκλήρωση του χρωματισμού, τα πακέτα αναδιατάσσονται σε κάθε στήλη με τον <span class="glossary-term" data-term="greedy">άπληστο</span> αλγόριθμο σε το πολύ &radic;N&minus;1 <span class="glossary-term" data-term="step">βήματα</span>.</span>' +
-        '<div class="algo-source"><span lang="en">Source:</span><span lang="gr">Πηγή:</span> F. T. Leighton, Introduction to Parallel Algorithms and Architectures, San Mateo, CA: Morgan Kaufmann Publishers, 1992.</div>';
+        'Μετά την ολοκλήρωση του χρωματισμού, τα πακέτα αναδιατάσσονται σε κάθε στήλη με τον <span class="glossary-term" data-term="greedy">άπληστο</span> αλγόριθμο σε το πολύ &radic;N&minus;1 <span class="glossary-term" data-term="step">βήματα</span>.</span>';
 
     const coloringCard = {
         id: 'p1-coloring', navLabel: '<span lang="en">Phase 1: Coloring</span><span lang="gr">Φάση 1: Χρωματισμός</span>', kind: 'action', theory: hallTheory, interactive: true,
@@ -1298,31 +1298,9 @@ function buildBasicAlgorithmCards() {
                 appendAnimationLauncher(resultActions, buildBasicAnimationConfig);
 
                 if (n % 2 === 0) {
-                    const knBtn = document.createElement('button');
-                    knBtn.className = 'btn-primary';
-                    knBtn.innerHTML =
-                        '<span lang="en">Try the same instance with the other algorithm too</span>' +
-                        '<span lang="gr">Δοκίμασε το ίδιο στιγμιότυπο και με τον άλλο αλγόριθμο</span>';
-                    knBtn.addEventListener('click', function () {
-                        window._oaTransferToKN = {
-                            n: n,
-                            values: packets.map(function (p) {
-                                return { row: p.sourceRow, col: p.sourceCol, val: p.destRow + ',' + p.destCol };
-                            })
-                        };
-                        resetMeshCard();
-                        document.getElementById('algoSelectScreen').style.display = 'block';
-                        document.getElementById('flowContainer').style.display = 'none';
-                        document.querySelectorAll('.algo-card').forEach(function(c) { c.classList.remove('selected'); });
-                        const knCard = document.querySelector('.algo-card[data-algo="krizanc"]');
-                        if (knCard) {
-                            knCard.classList.add('selected');
-                            document.getElementById('selectedAlgo').value = 'krizanc';
-                            document.getElementById('startFlowBtn').disabled = false;
-                            document.getElementById('startFlowBtn').click();
-                        }
-                    });
-                    resultActions.appendChild(knBtn);
+                    appendTransferButton(resultActions, 'krizanc', n, packets.map(function (p) {
+                        return { row: p.sourceRow, col: p.sourceCol, val: p.destRow + ',' + p.destCol };
+                    }));
                 }
 
                 api.complete();
