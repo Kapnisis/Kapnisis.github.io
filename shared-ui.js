@@ -301,13 +301,13 @@ function formatBound(kind, n) {
     if (kind === 'krizanc') {
         boundValue = 2.5 * n;
         formulaInstance = '2.5&middot;&radic;' + N + ' = ' + boundValue;
-        return '<span lang="en">Number of steps ' + formulaInstance + '</span>' +
-            '<span lang="gr">Αριθμός βημάτων ' + formulaInstance + '</span>';
+        return '<span lang="en">Number of steps</span>' +
+            '<span lang="gr">Αριθμός βημάτων</span><br>' + formulaInstance;
     }
     boundValue = 3 * n - 3;
     formulaInstance = '3&middot;&radic;' + N + ' &minus; 3 = ' + boundValue;
-    return '<span lang="en">Theoretical upper bound ' + formulaInstance + '</span>' +
-        '<span lang="gr">Θεωρητικό άνω φράγμα ' + formulaInstance + '</span>';
+    return '<span lang="en">max # of steps</span>' +
+        '<span lang="gr">max # βημάτων</span><br>' + formulaInstance;
 }
 
 /* Step sequence */

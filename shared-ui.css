@@ -490,3 +490,14 @@
 @media (max-width: 700px) {
     .anim-modal { width: 98%; padding: 32px 10px 12px; }
 }
+
+/* ══════ Algorithm card: source line ══════ */
+/* The label stays on the left and every line of the citation is aligned
+   under the first one. Base styling lives in offline-alg_ver2.css. */
+.algo-source {
+    display: flex;
+    gap: 4px;
+    padding-left: 0;
+    text-indent: 0;
+}
+.algo-source-text { flex: 1 1 auto; min-width: 0; }

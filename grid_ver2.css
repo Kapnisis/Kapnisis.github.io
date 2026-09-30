@@ -4,6 +4,17 @@ body {
     min-height: 100vh;
 }
 
+/* Accessibility widget — high contrast.
+   The widget only overrides background-color, so any gradient we set would keep
+   painting on top of it and leave the page its normal color. */
+body[class*="snn-high-contrast-"] {
+    background-image: none !important;
+}
+
+body[class*="snn-high-contrast-"] *:not(#snn-accessibility-widget-container):not(#snn-accessibility-widget-container *) {
+    background-image: none !important;
+}
+
 /* Wrapper allows horizontal scroll instead of ever shrinking cells */
 #tableContainer,
 #phaseContainer .grid-scroll-wrap {

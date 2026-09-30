@@ -1286,8 +1286,9 @@ function buildBasicAlgorithmCards() {
                     '<span lang="en">The algorithm terminates. The mesh has been routed.</span>' +
                     '<span lang="gr">Ο αλγόριθμος τερματίζει, το πλέγμα δρομολογήθηκε.</span></div></div>' +
                     '<div class="result-stat"><div class="num">' + (p1+p2+p3) + '</div><div class="label">' +
-                    '<span lang="en">Actual steps (Phase 1=' + p1 + ', Phase 2=' + p2 + ', Phase 3=' + p3 + ')</span>' +
-                    '<span lang="gr">Πραγματικά βήματα (Φάση 1=' + p1 + ', Φάση 2=' + p2 + ', Φάση 3=' + p3 + ')</span></div></div>' +
+                    '<span lang="en">Actual steps</span><span lang="gr">Πραγματικά βήματα</span><br>' +
+                    '<span lang="en">(Phase 1=' + p1 + ', Phase 2=' + p2 + ', Phase 3=' + p3 + ')</span>' +
+                    '<span lang="gr">(Φάση 1=' + p1 + ', Φάση 2=' + p2 + ', Φάση 3=' + p3 + ')</span></div></div>' +
                     '<div class="result-stat"><div class="num">' + 3*(n-1) + '</div><div class="label">' + formatBound('basic', n) + '</div></div>' +
                     '</div>';
                 body.appendChild(resultHolder);

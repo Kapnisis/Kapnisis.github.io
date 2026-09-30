@@ -9,9 +9,9 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.0.0/dist/css/bootstrap.min.css"
         integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
 
-    <link href="grid_ver2.css?v=2" rel="stylesheet" />
+    <link href="grid_ver2.css?v=3" rel="stylesheet" />
     <link href="offline-alg_ver2.css?v=11" rel="stylesheet" />
-    <link href="shared-ui.css?v=8" rel="stylesheet" />
+    <link href="shared-ui.css?v=9" rel="stylesheet" />
 
     <!-- Zoom / Pan -->
     <script src="https://cdn.jsdelivr.net/npm/@panzoom/panzoom@4.5.1/dist/panzoom.min.js"></script>
@@ -52,8 +52,8 @@
         <div id="algoSelectScreen">
 
             <div class="intro-panel">
-                <span lang="en">In our application we present two algorithms that use off-line techniques to route information packets on N processors arranged in a two-dimensional square mesh &radic;N x &radic;N. Choose the algorithm you want to use:</span>
-                <span lang="gr">Στην εφαρμογή μας παρουσιάζουμε δύο αλγορίθμους που χρησιμοποιούν off-line τεχνικές για τη δρομολόγηση πακέτων πληροφορίας σε N επεξεργαστές διαταγμένους σε διδιάστατο τετραγωνικό πλέγμα &radic;N x &radic;N. Επίλεξε τον αλγόριθμο που θες να χρησιμοποιήσεις:</span>
+                <span lang="en">You can use the application for visualizing the execution of two offline parallel algorithms for any one-to-one routing problem on the <span class="glossary-term" data-term="mesh">mesh</span> for user-defined or automatically generated instances.</span>
+                <span lang="gr">Στην εφαρμογή παρουσιάζεται οπτικοποιημένη η εκτέλεση δύο offline παράλληλων αλγορίθμων για 1-1 προβλήματα δρομολόγησης σε <span class="glossary-term" data-term="mesh">πλέγματα</span> επεξεργαστών για αρχικά στιγμιότυπα που θέλετε ή που παράγονται αυτόματα από την εφαρμογή.</span>
             </div>
 
             <div class="algo-cards">
@@ -62,13 +62,13 @@
                         <h3><span lang="en">Matching-based parallel offline routing algorithm</span><span lang="gr">Παράλληλος αλγόριθμος offline δρομολόγησης βασισμένος σε ταιριάσματα</span></h3>
                     </div>
                     <div class="algo-card-body">
-                        <div class="algo-stat-row"><span class="algo-stat-label" lang="en">Theoretical upper bound of steps</span><span class="algo-stat-label" lang="gr">Θεωρητικό άνω φράγμα βημάτων</span><span class="algo-stat-value">3 &middot; &radic;N &minus; 3</span></div>
+                        <div class="algo-stat-row"><span class="algo-stat-label" lang="en">Theoretical upper bound on the number of steps</span><span class="algo-stat-label" lang="gr">Θεωρητικό άνω φράγμα βημάτων</span><span class="algo-stat-value">3 &middot; &radic;N &minus; 3</span></div>
                         <div class="algo-stat-row"><span class="algo-stat-label" lang="en">Queue size per edge</span><span class="algo-stat-label" lang="gr">Μέγεθος ουράς σε κάθε ακμή</span><span class="algo-stat-value">1</span></div>
                         <p style="margin-top:14px; margin-bottom:0; line-height:1.5;">
-                            <span lang="en">Executes 3 greedy permutations.<br>Protects the queue size with an off-line routing trick before executing them.</span>
-                            <span lang="gr">Εκτελεί 3 άπληστες μεταθέσεις.<br>Προστατεύει το μέγεθος ουρών με ένα τρικ off-line δρομολόγησης πριν την εκτέλεσή τους.</span>
+                            <span lang="en">Executes 3 greedy permutations.<br>Protects the queue size with an offline routing trick before executing them.</span>
+                            <span lang="gr">Εκτελεί 3 άπληστες μεταθέσεις.<br>Προστατεύει το μέγεθος ουρών με ένα τρικ offline δρομολόγησης πριν την εκτέλεσή τους.</span>
                         </p>
-                        <div class="algo-source"><span lang="en">Source:</span><span lang="gr">Πηγή:</span> F. T. Leighton, Introduction to Parallel Algorithms and Architectures, San Mateo, CA: Morgan Kaufmann Publishers, 1992.</div>
+                        <div class="algo-source"><span lang="en">Source:</span><span lang="gr">Πηγή:</span> <span class="algo-source-text">F. T. Leighton, Introduction to Parallel Algorithms and Architectures, San Mateo, CA: Morgan Kaufmann Publishers, 1992.</span></div>
                     </div>
                     <div class="algo-card-footer">
                         <span lang="en">Select this algorithm</span>
@@ -81,14 +81,14 @@
                         <h3><span lang="en">Parallel offline routing algorithm with queues of size 2</span><span lang="gr">Παράλληλος αλγόριθμος offline δρομολόγησης με ουρές μεγέθους 2</span></h3>
                     </div>
                     <div class="algo-card-body">
-                        <div class="algo-stat-row"><span class="algo-stat-label" lang="en">Theoretical upper bound of steps</span><span class="algo-stat-label" lang="gr">Θεωρητικό άνω φράγμα βημάτων</span><span class="algo-stat-value">2.5 &middot; &radic;N</span></div>
+                        <div class="algo-stat-row"><span class="algo-stat-label" lang="en">Theoretical upper bound on the number of steps</span><span class="algo-stat-label" lang="gr">Θεωρητικό άνω φράγμα βημάτων</span><span class="algo-stat-value">2.5 &middot; &radic;N</span></div>
                         <div class="algo-stat-row"><span class="algo-stat-label" lang="en">Queue size per processor</span><span class="algo-stat-label" lang="gr">Μέγεθος ουράς επεξεργαστή</span><span class="algo-stat-value">2</span></div>
 
                         <p style="margin-top:14px; margin-bottom:0; line-height:1.5;">
-                            <span lang="en">Splits the mesh into quadrants and performs off-line routing on them to achieve the queue bound.</span>
-                            <span lang="gr">Χωρίζει το πλέγμα σε τεταρτημόρια και κάνει off-line δρομολόγηση σε αυτά για να επιτύχει το όριο ουράς.</span>
+                            <span lang="en">Splits the mesh into quadrants and performs offline routing on them to achieve the queue bound.</span>
+                            <span lang="gr">Χωρίζει το πλέγμα σε τεταρτημόρια και κάνει offline δρομολόγηση σε αυτά για να επιτύχει το όριο ουράς.</span>
                         </p>
-                        <div class="algo-source"><span lang="en">Source:</span><span lang="gr">Πηγή:</span> D. Krizanc, L. Narayanan. Off-line routing with small queues on a mesh-connected processor array. In Proc. of the 3rd IEEE Symposium on Parallel and Distributed Processing (SPDP 91), IEEE Computer Society, pp. 301 - 304, 1991.</div>
+                        <div class="algo-source"><span lang="en">Source:</span><span lang="gr">Πηγή:</span> <span class="algo-source-text">D. Krizanc, L. Narayanan. Off-line routing with small queues on a mesh-connected processor array. In Proc. of the 3rd IEEE Symposium on Parallel and Distributed Processing (SPDP 91), IEEE Computer Society, pp. 301 - 304, 1991.</span></div>
                     </div>
                     <div class="algo-card-footer">
                         <span lang="en">Select this algorithm</span>
@@ -109,11 +109,11 @@
 
     </div>
 
-    <script src="shared-ui.js?v=20"></script>
+    <script src="shared-ui.js?v=21"></script>
     <script src="animation.js?v=4"></script>
     <script src="grid_ver2.js?v=8"></script>
-    <script src="offline-alg_ver2.js?v=21"></script>
-<script src="k-n.js?v=16"></script>
+    <script src="offline-alg_ver2.js?v=22"></script>
+<script src="k-n.js?v=17"></script>
 
     <script>
         window.skipTutorials = false;
