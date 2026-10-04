@@ -521,11 +521,20 @@
     display: flex;
     gap: 24px;
     flex-wrap: wrap;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
 }
 
 .result-stat {
     text-align: center;
     max-width: 260px;
+}
+
+/* The closing message is always the first child and spans the whole row. */
+.result-banner > .result-stat:first-child {
+    flex-basis: 100%;
+    max-width: 100%;
 }
 
 .result-stat .num {

@@ -468,10 +468,10 @@ function buildBasicAlgorithmCards() {
         skipRow.className = 'coloring-skip-row';
         const skipColorBtn = document.createElement('button');
         skipColorBtn.className = 'btn-pale';
-        skipColorBtn.innerHTML = '<span lang="en">Skip to end of this color</span><span lang="gr">Παράλειψη έως το τέλος αυτού του χρώματος</span>';
+        skipColorBtn.innerHTML = '<span lang="en">Skip this color</span><span lang="gr">Παράλειψη χρώματος</span>';
         const skipAllBtn = document.createElement('button');
         skipAllBtn.className = 'btn-pale';
-        skipAllBtn.innerHTML = '<span lang="en">Skip to end &rarr;</span><span lang="gr">Παράλειψη έως το τέλος &rarr;</span>';
+        skipAllBtn.innerHTML = '<span lang="en">Skip to the end</span><span lang="gr">Παράλειψη ως το τέλος</span>';
         skipRow.appendChild(skipColorBtn);
         skipRow.appendChild(skipAllBtn);
         controlBox.appendChild(skipRow);

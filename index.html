@@ -4,17 +4,29 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Παράλληλη offline δρομολόγηση σε πλέγμα / Parallel offline routing on the mesh</title>
+    <title>PORouM</title>
+    <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="favicon-180.png" />
 
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.0.0/dist/css/bootstrap.min.css"
         integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
 
     <link href="grid_ver2.css?v=3" rel="stylesheet" />
-    <link href="offline-alg_ver2.css?v=11" rel="stylesheet" />
-    <link href="shared-ui.css?v=9" rel="stylesheet" />
+    <link href="offline-alg_ver2.css?v=12" rel="stylesheet" />
+    <link href="shared-ui.css?v=13" rel="stylesheet" />
 
     <!-- Zoom / Pan -->
     <script src="https://cdn.jsdelivr.net/npm/@panzoom/panzoom@4.5.1/dist/panzoom.min.js"></script>
+    <script>
+        // Read by the accessibility widget before it builds itself: a smaller
+        // button, parked at the top right just below the language pill.
+        // Size only: shared-ui.js lifts the button into the header, next to the
+        // language pill. The default bottom-right spot is the fallback if that
+        // ever fails, so the button never floats over the cards.
+        window.ACCESSIBILITY_WIDGET_CONFIG = {
+            button: { size: '46px', iconSize: '32px' }
+        };
+    </script>
     <script src="https://cdn.jsdelivr.net/npm/accessibility-widgets@latest/widget.js"></script>
 </head>
 
@@ -27,19 +39,22 @@
         }
     </script>
 
-    <nav class="navbar navbar-expand-lg navbar-dark" style="background: linear-gradient(135deg, #1a2a4a, #2a4a7a);">
-        <div class="container-fluid px-4">
-            <a class="navbar-brand" href="index.html" style="font-weight: bold; font-size: 18px; color: white; text-decoration: none; flex: 1 1 auto; min-width: 0;">
-                <span lang="en">Parallel offline routing on the mesh</span>
-                <span lang="gr">Παράλληλη offline δρομολόγηση σε πλέγμα</span>
-            </a>
-            <div class="lang-switch" style="flex-shrink: 0; margin-left: 16px;">
-                <button class="lang-btn" data-lang="gr" onclick="setLang('gr')">ΕΛ</button>
-                <span class="lang-sep">|</span>
-                <button class="lang-btn" data-lang="en" onclick="setLang('en')">EN</button>
-            </div>
+    <header class="app-header">
+        <a class="app-brand" href="index.html">
+            <img class="app-brand-logo" src="logo.png" alt="" />
+            <span class="app-brand-text">
+                <span class="app-brand-name">P.O.Rou.M.</span>
+                <span class="app-brand-sub">
+                    <span lang="en">Parallel offline routing on the mesh</span>
+                    <span lang="gr">Παράλληλη offline δρομολόγηση σε πλέγμα</span>
+                </span>
+            </span>
+        </a>
+        <div class="lang-switch">
+            <button class="lang-btn" data-lang="gr" onclick="setLang('gr')">ΕΛ</button>
+            <button class="lang-btn" data-lang="en" onclick="setLang('en')">EN</button>
         </div>
-    </nav>
+    </header>
 
 
 
@@ -50,6 +65,10 @@
 
         <!-- Algorithm selection (pre-flow screen, not part of the dot sequence) -->
         <div id="algoSelectScreen">
+
+            <div class="home-logo-wrap">
+                <img class="home-logo" src="logo.png" alt="PORouM" />
+            </div>
 
             <div class="intro-panel">
                 <span lang="en">You can use the application for visualizing the execution of two offline parallel algorithms for any one-to-one routing problem on the <span class="glossary-term" data-term="mesh">mesh</span> for user-defined or automatically generated instances.</span>
@@ -109,11 +128,11 @@
 
     </div>
 
-    <script src="shared-ui.js?v=21"></script>
+    <script src="shared-ui.js?v=23"></script>
     <script src="animation.js?v=4"></script>
     <script src="grid_ver2.js?v=8"></script>
-    <script src="offline-alg_ver2.js?v=22"></script>
-<script src="k-n.js?v=17"></script>
+    <script src="offline-alg_ver2.js?v=23"></script>
+<script src="k-n.js?v=20"></script>
 
     <script>
         window.skipTutorials = false;

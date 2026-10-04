@@ -310,6 +310,38 @@ function formatBound(kind, n) {
         '<span lang="gr">max # βημάτων</span><br>' + formulaInstance;
 }
 
+/* Bring the current card into view.
+   Meshes and graphs get their height a few frames after the card is rendered,
+   so scrolling right away has nothing to scroll yet: we wait for the height to
+   settle and only scroll when the card does not already fit on screen. */
+function scrollCardIntoView(el) {
+    if (!el || typeof el.getBoundingClientRect !== 'function') return;
+
+    let lastHeight = -1;
+    let tries = 0;
+
+    function scrollNow(top) {
+        const target = Math.max(0, Math.round(top) - 8);
+        try { window.scrollTo({ top: target, behavior: 'smooth' }); }
+        catch (e) { window.scrollTo(0, target); }
+    }
+
+    function settle() {
+        const rect = el.getBoundingClientRect();
+        if (rect.height !== lastHeight && tries < 12) {
+            lastHeight = rect.height;
+            tries++;
+            setTimeout(settle, 50);
+            return;
+        }
+        if (rect.top < 0 || rect.bottom > window.innerHeight) {
+            scrollNow(rect.top + (window.pageYOffset || document.documentElement.scrollTop || 0));
+        }
+    }
+
+    setTimeout(settle, 50);
+}
+
 /* Step sequence */
 function renderStepSequence(hostEl, cards, opts) {
     opts = opts || {};
@@ -437,9 +469,7 @@ function renderStepSequence(hostEl, cards, opts) {
             markReachable(currentIndex + 1);
         }
         refreshChrome();
-        if (typeof cardShell.scrollIntoView === 'function') {
-            try { cardShell.scrollIntoView({ block: 'start', behavior: 'smooth' }); } catch (e) {  }
-        }
+        scrollCardIntoView(cardShell);
     }
 
     function refreshChrome() {
@@ -472,3 +502,34 @@ function renderStepSequence(hostEl, cards, opts) {
 
     goTo(0);
 }
+/* Accessibility widget: lift its button into the page header.
+   The widget appends a floating, position:fixed button to the body, which on
+   small screens covers the cards (the «?» among others). Its shadow root is
+   open, so we can drop a style inside it and let the button sit in the header
+   next to the language pill, scrolling away with it. The widget's own menu
+   panel is untouched and still opens as a full-height overlay. */
+(function moveAccessibilityButton() {
+    function place() {
+        const host = document.getElementById('snn-accessibility-widget-container');
+        const header = document.querySelector('.app-header');
+        if (!host || !header || !host.shadowRoot) return false;
+        const btn = host.shadowRoot.getElementById('snn-accessibility-fixed-button');
+        if (!btn) return false;
+        if (host.dataset.inHeader === '1') return true;
+
+        const style = document.createElement('style');
+        style.textContent = '#snn-accessibility-fixed-button{position:static !important;padding:0 !important;}';
+        host.shadowRoot.appendChild(style);
+
+        host.classList.add('app-a11y-slot');
+        header.appendChild(host);
+        host.dataset.inHeader = '1';
+        return true;
+    }
+
+    if (place()) return;
+    if (typeof MutationObserver === 'undefined') return;
+    const observer = new MutationObserver(function () { if (place()) observer.disconnect(); });
+    observer.observe(document.documentElement, { childList: true, subtree: true });
+    setTimeout(function () { observer.disconnect(); }, 15000);
+})();

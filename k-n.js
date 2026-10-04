@@ -667,7 +667,7 @@ function buildKrizancAlgorithmCards() {
         let html = hoverFn(p) + '<br>' + (gr ? 'Ομάδα: ' : 'Group: ') + knPermChip(p.permGroup) +
             '<br>' + (gr ? 'Διαδρομή: ' : 'Route: ') + (p.permGroup === 1 ? 'col &rarr; row &rarr; col' : 'row &rarr; col &rarr; row');
         if (p.permGroup === 1) html += '<br>' + (gr ? 'Γραμμή για την αναδιάταξη: ' : 'Row for the rearrangement: ') + p.midRow;
-        else html += '<br>' + (gr ? 'Ενδιάμεση στήλη: ' : 'Intermediate column: ') + p.midCol;
+        else html += '<br>' + (gr ? 'Στήλη για την αναδιάταξη: ' : 'Column for the rearrangement: ') + p.midCol;
         return html;
     };
     const makeHoverWithPerm = function (t, boundaries) {
@@ -838,7 +838,7 @@ function knHighlightOddEvenPairs(routeGrid, t, boundaries, permIdx, mode, gridOp
         skipBtn.className = 'btn-pale';
         skipBtn.style.marginLeft = '6px';
         skipBtn.innerHTML = '&rarr;&rarr;';
-        skipBtn.title = isGrLang() ? 'Παράλειψη έως το τέλος' : 'Skip to end';
+        skipBtn.title = isGrLang() ? 'Παράλειψη ως το τέλος' : 'Skip to the end';
         row.appendChild(prevBtn); row.appendChild(stepLabel); row.appendChild(dotsWrap); row.appendChild(nextBtn); row.appendChild(skipBtn);
 
         function renderLabel() {
@@ -1148,13 +1148,24 @@ function knHighlightOddEvenPairs(routeGrid, t, boundaries, permIdx, mode, gridOp
 
         const skipRow = document.createElement('div');
         skipRow.className = 'coloring-skip-row';
+
+        // Skip to the end of the current group. opts.groupSkip is its label, or
+        // false when the groups of this timeline are not worth skipping over.
         const skipGroupBtn = document.createElement('button');
         skipGroupBtn.className = 'btn-pale';
-        skipGroupBtn.innerHTML = '<span lang="en">Skip to end of this stage</span><span lang="gr">Παράλειψη έως το τέλος του σταδίου</span>';
+        if (opts.groupSkip) skipGroupBtn.innerHTML = opts.groupSkip;
+
+        // Optional middle jump, e.g. past the whole Hall coloring.
+        const skipMidBtn = document.createElement('button');
+        skipMidBtn.className = 'btn-pale';
+        if (opts.midSkip) skipMidBtn.innerHTML = opts.midSkip.label;
+
         const skipAllBtn = document.createElement('button');
         skipAllBtn.className = 'btn-pale';
-        skipAllBtn.innerHTML = '<span lang="en">Skip to end &rarr;</span><span lang="gr">Παράλειψη έως το τέλος &rarr;</span>';
-        skipRow.appendChild(skipGroupBtn);
+        skipAllBtn.innerHTML = '<span lang="en">Skip to the end</span><span lang="gr">Παράλειψη ως το τέλος</span>';
+
+        if (opts.groupSkip) skipRow.appendChild(skipGroupBtn);
+        if (opts.midSkip) skipRow.appendChild(skipMidBtn);
         skipRow.appendChild(skipAllBtn);
         box.appendChild(skipRow);
 
@@ -1174,6 +1185,7 @@ function knHighlightOddEvenPairs(routeGrid, t, boundaries, permIdx, mode, gridOp
         function renderBalls() {
             ballsInner.innerHTML = '';
             groups.forEach(function (gr) {
+                if (idx < gr.start) return;   // reveal bookmarks as they are reached
                 const dot = document.createElement('button');
                 dot.type = 'button';
                 dot.className = 'coloring-ball' + (idx >= gr.start && idx <= gr.end ? ' current' : '');
@@ -1193,8 +1205,14 @@ function knHighlightOddEvenPairs(routeGrid, t, boundaries, permIdx, mode, gridOp
             prevBtn.disabled = idx <= 0;
             nextBtn.disabled = idx >= steps.length - 1;
             const gr = groupOf(idx);
-            skipGroupBtn.style.display = (idx < gr.end) ? 'inline-block' : 'none';
-            skipGroupBtn.onclick = function () { goTo(gr.end); };
+            if (opts.groupSkip) {
+                skipGroupBtn.style.display = (idx < gr.end) ? 'inline-block' : 'none';
+                skipGroupBtn.onclick = function () { goTo(gr.end); };
+            }
+            if (opts.midSkip) {
+                skipMidBtn.style.display = (idx < opts.midSkip.index) ? 'inline-block' : 'none';
+                skipMidBtn.onclick = function () { goTo(opts.midSkip.index); };
+            }
             skipAllBtn.style.display = (idx >= steps.length - 1) ? 'none' : 'inline-block';
 
             if (idx >= steps.length - 1 && typeof opts.onEnd === 'function') opts.onEnd();
@@ -1227,6 +1245,12 @@ function knHighlightOddEvenPairs(routeGrid, t, boundaries, permIdx, mode, gridOp
             const content = document.createElement('div');
             content.dataset.zoomHeight = knPhase2CanvasHeight();
             body.appendChild(content);
+
+            // A sub-mesh view is far taller than the menu, and opening one does
+            // not re-render the card, so bring the card back into view here.
+            const refitCard = function () {
+                if (typeof scrollCardIntoView === 'function') scrollCardIntoView(body.parentElement);
+            };
 
             function buildStep3NavRow(activeKey) {
                 const btnRow = document.createElement('div');
@@ -1302,7 +1326,7 @@ function knHighlightOddEvenPairs(routeGrid, t, boundaries, permIdx, mode, gridOp
             function renderQuadView(Q) {
                 content.innerHTML = '';
 
-                if (Q._view) { content.appendChild(Q._view); return; }
+                if (Q._view) { content.appendChild(Q._view); refitCard(); return; }
                 const view = document.createElement('div');
                 Q._view = view;
                 content.appendChild(view);
@@ -1482,6 +1506,8 @@ function knHighlightOddEvenPairs(routeGrid, t, boundaries, permIdx, mode, gridOp
                 });
 
                 const decompTl = knMakeTimeline(decompSteps, {
+                    groupSkip: '<span lang="en">Skip to the end of this cycle</span>' +
+                        '<span lang="gr">Παράλειψη ως το κλείσιμο του κύκλου</span>',
                     onEnd: function () { Q._decompDone = true; subphaseRow._setEnabled(1, true); }
                 });
 
@@ -1638,7 +1664,16 @@ function knHighlightOddEvenPairs(routeGrid, t, boundaries, permIdx, mode, gridOp
                         },
                         draw: function () { drawRouteGrid(Q.gS2[g], 0); drawHallGraph(ms.length - 1); }
                     });
-                    return knMakeTimeline(steps, { onEnd: markRouted });
+                    return knMakeTimeline(steps, {
+                        groupSkip: '<span lang="en">Skip this color</span>' +
+                            '<span lang="gr">Παράλειψη χρώματος</span>',
+                        midSkip: {
+                            index: ms.length,   // last step of the Hall coloring
+                            label: '<span lang="en">Skip the whole coloring</span>' +
+                                '<span lang="gr">Παράλειψη όλου του χρωματισμού</span>'
+                        },
+                        onEnd: markRouted
+                    });
                 }
 
                 function buildBothTimeline() {
@@ -1727,12 +1762,13 @@ function knHighlightOddEvenPairs(routeGrid, t, boundaries, permIdx, mode, gridOp
 
                 decompTl.goTo(0);
                 selectSubphase(0);
+                refitCard();
             }
 
             let allView = null;
             function renderAllView() {
                 content.innerHTML = '';
-                if (allView) { content.appendChild(allView); return; }
+                if (allView) { content.appendChild(allView); refitCard(); return; }
                 const view = document.createElement('div');
                 allView = view;
                 content.appendChild(view);
@@ -1819,6 +1855,7 @@ function knHighlightOddEvenPairs(routeGrid, t, boundaries, permIdx, mode, gridOp
                     (i === 0 ? decompTl : routeTl).redraw();
                 }
                 selectSubphase(0);
+                refitCard();
             }
 
             renderMenu();
