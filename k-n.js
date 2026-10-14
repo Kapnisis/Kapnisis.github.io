@@ -1756,7 +1756,7 @@ function knHighlightOddEvenPairs(routeGrid, t, boundaries, permIdx, mode, gridOp
                     } else {
 
                         decompTl.goToEnd();
-                        selectPermView(currentPerm < 0 ? 0 : currentPerm);
+                        selectPermView(currentPerm < 0 ? 2 : currentPerm);
                     }
                 }
 
